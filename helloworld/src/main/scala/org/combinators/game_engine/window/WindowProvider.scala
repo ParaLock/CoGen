@@ -1,16 +1,14 @@
-package org.combinators.helloworld
+package org.combinators.game_engine.window
 
-import org.combinators.ep.domain._
 import org.combinators.ep.domain.abstractions._
 import org.combinators.ep.domain.instances.{DataTypeInstance, InstanceRep}
 import org.combinators.ep.generator.Command._
-import org.combinators.ep.generator.{AbstractSyntax, NameProvider, TestImplementationProvider, Understands}
 import org.combinators.ep.generator.paradigm.AnyParadigm.syntax._
 import org.combinators.ep.generator.paradigm.{AddImport, AnyParadigm, ObjectOriented, ResolveImport}
-import org.combinators.game_engine.domain.Message
+import org.combinators.ep.generator.{NameProvider, Understands}
 
-/** Attempt to provide a hello world generator. */
-trait HelloWorldProvider {
+/** Attempt to provide a window provider -- perhaps can be abstracted.... */
+trait WindowProvider {
   val paradigm: AnyParadigm
   val names: NameProvider[paradigm.syntax.Name]
   val ooParadigm: ObjectOriented.WithBase[paradigm.type]
@@ -53,7 +51,7 @@ trait HelloWorldProvider {
   }
 
   /** Entry point into code generation. */
-  def implement(msg:Message): Generator[ProjectContext, Unit]
+  def implement(): Generator[ProjectContext, Unit]
 
   /** Define standard test name. */
   def testCaseName:Name = {

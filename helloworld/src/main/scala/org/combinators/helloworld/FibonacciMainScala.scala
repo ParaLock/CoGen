@@ -19,6 +19,15 @@ class FibonacciIndependentMainScala {
   
   val fibonacciApproach = FibonacciIndependentProvider.functional[Syntax.default.type, generator.paradigm.type](generator.paradigm)(ScalaNameProvider, generator.functional, generator.functionalInMethod, generator.intsInMethod, generator.assertionsInMethod, generator.equalityInMethod)
 
+  //  val fibonacciApproach = FibonacciIndependentProvider.imperative[Syntax.default.type, generator.paradigm.type](generator.paradigm)(
+//    ScalaNameProvider,
+//    generator.ooParadigm,
+//    generator.,
+//    generator.intsInMethod,
+//    generator.assertionsInMethod,
+//    generator.equalityInMethod
+//  )
+
   val persistable = FileWithPathPersistable[FileWithPath]
 
   def directToDiskTransaction(targetDirectory: Path): IO[Unit] = {

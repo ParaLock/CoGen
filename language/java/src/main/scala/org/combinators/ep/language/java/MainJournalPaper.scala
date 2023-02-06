@@ -27,16 +27,16 @@ class MainJournalPaper {
   val algebraApproach = ObjectAlgebras[Syntax.default.type, generator.paradigm.type](generator.paradigm)(JavaNameProvider, generator.ooParadigm, generator.parametricPolymorphism)(generator.generics)
 
   // select one here.
-  //val approach = ooApproach // WORKS!
+  val approach = ooApproach // WORKS!
   // val approach = visitorApproach  // WORKS!
   // val approach = visitorSideEffectApproach // WORKS!
   // val approach = extensibleVisitorApproach // WORKS
   // val approach = triviallyApproach // WORKS!
   // val approach = vitaApproach // WORKS!
   // interpreterApproach NOT YET WORKING
-  val approach = algebraApproach// algebraApproach  // cocoCleanApproach
+  //val approach = algebraApproach// algebraApproach  // cocoCleanApproach
 
-  val evolutions = Seq(M0, M1, M2, I1, M3, M3I1, N1, I2M3I1N1)    // all test cases become active WHEN all included.
+  val evolutions = Seq(M0, M1, M2, I1, I2, M3, M3I1, N1, I2M3I1N1)    // all test cases become active WHEN all included.
 
   //val evolutions = Seq(M0, M1, M2, M3, M4, M5, M6, M7) //
 //  val eip = eips.I2(approach.paradigm)(generator.doublesInMethod, generator.realDoublesInMethod,

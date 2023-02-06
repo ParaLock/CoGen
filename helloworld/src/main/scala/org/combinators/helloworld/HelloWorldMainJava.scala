@@ -15,6 +15,7 @@ import org.combinators.ep.generator.FileWithPathPersistable._
 import org.combinators.ep.generator.{FileWithPath, FileWithPathPersistable}
 import org.combinators.ep.language.java.paradigm.ObjectOriented
 import org.combinators.ep.language.java.{CodeGenerator, JavaNameProvider, PartiallyBoxed, Syntax}
+import org.combinators.game_engine.domain.Message
 
 import java.nio.file.{Path, Paths}
 
@@ -27,6 +28,8 @@ class HelloWorldMainJava {
   val helloWorldApproach = HelloWorldObjectOrientedProvider[Syntax.default.type, generator.paradigm.type](generator.paradigm)(JavaNameProvider, generator.imperativeInMethod, generator.ooParadigm, generator.consoleInMethod, generator.arraysInMethod, generator.assertionsInMethod, generator.equalityInMethod)
 
   val persistable = FileWithPathPersistable[FileWithPath]
+
+  val msg = new Message("Hello, George!");
 
   def directToDiskTransaction(targetDirectory: Path): IO[Unit] = {
 
@@ -42,7 +45,7 @@ class HelloWorldMainJava {
           _ <- generator.equalityInMethod.enable()
           _ <- generator.assertionsInMethod.enable()
           
-          _ <- helloWorldApproach.implement()
+          _ <- helloWorldApproach.implement(msg)
         } yield ()
       }
 

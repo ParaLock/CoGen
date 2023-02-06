@@ -6,6 +6,7 @@ import org.combinators.ep.generator.paradigm.control.Imperative
 import org.combinators.ep.generator.paradigm.ffi.{Arrays, Assertions, Console, Equality}
 import org.combinators.ep.generator.paradigm.{AnyParadigm, FindClass, ObjectOriented}
 import org.combinators.ep.generator.{AbstractSyntax, Command, NameProvider, Understands}
+import org.combinators.game_engine.domain.Message
 
 /** Any OO approach will need to properly register type mappings and provide a default mechanism for finding a class
  * in a variety of contexts. This trait provides that capability
@@ -148,7 +149,7 @@ trait HelloWorldObjectOrientedProvider extends HelloWorldProvider {
     } yield ()
   }
 
-  def staticMethodImplementation(): Generator[MethodBodyContext, Option[Expression]] = {
+  def staticMethodImplementation(msg:Message): Generator[MethodBodyContext, Option[Expression]] = {
     import ooParadigm.methodBodyCapabilities._
     import paradigm.methodBodyCapabilities._
     import impParadigm.imperativeCapabilities._
@@ -157,9 +158,12 @@ trait HelloWorldObjectOrientedProvider extends HelloWorldProvider {
       _ <- makeStaticSignature()
       worldType <- findClass(names.mangle("World"))
       _ <- resolveAndAddImport(worldType)
-      args <- getArguments()
-      zero <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, 0)
-      msg <- array.arrayCapabilities.get(args.head._3, zero)
+      //args <- getArguments()
+      //zero <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, 0)
+      //msg <- array.arrayCapabilities.get(args.head._3, zero)
+      msg <- paradigm.methodBodyCapabilities.reify(TypeRep.String, msg.msg)
+
+      // World msg = new World(args[0]);
 
       res <- instantiateObject(worldType, Seq(msg))
       fname <- freshName(names.mangle("msg"))  // be sure to unpack since this has a side effect on the context....
@@ -174,12 +178,12 @@ trait HelloWorldObjectOrientedProvider extends HelloWorldProvider {
     } yield Some(res)
   }
 
-  def makeMainClass(clazzName:String): Generator[ProjectContext, Unit] = {
+  def makeMainClass(clazzName:String, msg:Message): Generator[ProjectContext, Unit] = {
     import ooParadigm.projectCapabilities._
     val makeClass: Generator[ClassContext, Unit] = {
       import classCapabilities._
       for {
-        _ <- addMethod(names.mangle(main), staticMethodImplementation())
+        _ <- addMethod(names.mangle(main), staticMethodImplementation(msg))
       } yield ()
     }
 
@@ -217,11 +221,11 @@ trait HelloWorldObjectOrientedProvider extends HelloWorldProvider {
       } yield ()
   }
 
-  def implement(): Generator[ProjectContext, Unit] = {
+  def implement(msg:Message): Generator[ProjectContext, Unit] = {
 
     for {
       _ <- makeClass("World")
-      _ <- makeMainClass("Main")
+      _ <- makeMainClass("Main", msg)
       _ <- paradigm.projectCapabilities.addCompilationUnit(
         paradigm.compilationUnitCapabilities.addTestSuite(
           testName, makeTestCase("World")
