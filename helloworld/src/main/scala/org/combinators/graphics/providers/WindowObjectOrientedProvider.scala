@@ -1,4 +1,4 @@
-package org.combinators.game_engine.window
+package org.combinators.graphics.providers
 
 import org.combinators.ep.domain.abstractions.{DataType, DataTypeCase, TypeRep}
 import org.combinators.ep.generator.Command.Generator

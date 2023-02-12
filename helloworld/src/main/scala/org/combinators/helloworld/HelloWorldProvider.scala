@@ -7,7 +7,7 @@ import org.combinators.ep.generator.Command._
 import org.combinators.ep.generator.{AbstractSyntax, NameProvider, TestImplementationProvider, Understands}
 import org.combinators.ep.generator.paradigm.AnyParadigm.syntax._
 import org.combinators.ep.generator.paradigm.{AddImport, AnyParadigm, ObjectOriented, ResolveImport}
-import org.combinators.game_engine.domain.Message
+import org.combinators.graphics.domain.Text
 
 /** Attempt to provide a hello world generator. */
 trait HelloWorldProvider {
@@ -53,7 +53,7 @@ trait HelloWorldProvider {
   }
 
   /** Entry point into code generation. */
-  def implement(msg:Message): Generator[ProjectContext, Unit]
+  def implement(msg:Text): Generator[ProjectContext, Unit]
 
   /** Define standard test name. */
   def testCaseName:Name = {

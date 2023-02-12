@@ -6,7 +6,7 @@ import org.combinators.ep.generator.paradigm.control.Imperative
 import org.combinators.ep.generator.paradigm.ffi.{Arrays, Assertions, Console, Equality}
 import org.combinators.ep.generator.paradigm.{AnyParadigm, FindClass, ObjectOriented}
 import org.combinators.ep.generator.{AbstractSyntax, Command, NameProvider, Understands}
-import org.combinators.game_engine.domain.Message
+import org.combinators.graphics.domain.Text
 
 /** Any OO approach will need to properly register type mappings and provide a default mechanism for finding a class
  * in a variety of contexts. This trait provides that capability
@@ -149,7 +149,7 @@ trait HelloWorldObjectOrientedProvider extends HelloWorldProvider {
     } yield ()
   }
 
-  def staticMethodImplementation(msg:Message): Generator[MethodBodyContext, Option[Expression]] = {
+  def staticMethodImplementation(msg:Text): Generator[MethodBodyContext, Option[Expression]] = {
     import ooParadigm.methodBodyCapabilities._
     import paradigm.methodBodyCapabilities._
     import impParadigm.imperativeCapabilities._
@@ -178,7 +178,7 @@ trait HelloWorldObjectOrientedProvider extends HelloWorldProvider {
     } yield Some(res)
   }
 
-  def makeMainClass(clazzName:String, msg:Message): Generator[ProjectContext, Unit] = {
+  def makeMainClass(clazzName:String, msg:Text): Generator[ProjectContext, Unit] = {
     import ooParadigm.projectCapabilities._
     val makeClass: Generator[ClassContext, Unit] = {
       import classCapabilities._
@@ -221,7 +221,7 @@ trait HelloWorldObjectOrientedProvider extends HelloWorldProvider {
       } yield ()
   }
 
-  def implement(msg:Message): Generator[ProjectContext, Unit] = {
+  def implement(msg:Text): Generator[ProjectContext, Unit] = {
 
     for {
       _ <- makeClass("World")

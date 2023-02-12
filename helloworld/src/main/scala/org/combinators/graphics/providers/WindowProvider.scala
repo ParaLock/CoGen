@@ -1,4 +1,4 @@
-package org.combinators.game_engine.window
+package org.combinators.graphics.providers
 
 import org.combinators.ep.domain.abstractions._
 import org.combinators.ep.domain.instances.{DataTypeInstance, InstanceRep}

@@ -1,4 +1,4 @@
-package org.combinators.game_engine.window
+package org.combinators.graphics.providers
 
 /* Generates Fibonacci Program. */
 

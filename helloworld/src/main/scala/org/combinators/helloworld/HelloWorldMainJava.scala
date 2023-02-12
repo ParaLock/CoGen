@@ -15,7 +15,7 @@ import org.combinators.ep.generator.FileWithPathPersistable._
 import org.combinators.ep.generator.{FileWithPath, FileWithPathPersistable}
 import org.combinators.ep.language.java.paradigm.ObjectOriented
 import org.combinators.ep.language.java.{CodeGenerator, JavaNameProvider, PartiallyBoxed, Syntax}
-import org.combinators.game_engine.domain.Message
+import org.combinators.graphics.domain.Text
 
 import java.nio.file.{Path, Paths}
 
@@ -29,7 +29,7 @@ class HelloWorldMainJava {
 
   val persistable = FileWithPathPersistable[FileWithPath]
 
-  val msg = new Message("Hello, George!");
+  val msg = new Text("Hello, George!");
 
   def directToDiskTransaction(targetDirectory: Path): IO[Unit] = {
 
