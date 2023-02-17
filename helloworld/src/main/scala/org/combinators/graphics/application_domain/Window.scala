@@ -1,4 +1,4 @@
-package org.combinators.graphics.domain
+package org.combinators.graphics.application_domain
 
 class WindowMode extends Enumeration {
   type ModeType = Value
