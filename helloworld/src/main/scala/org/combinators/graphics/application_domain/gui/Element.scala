@@ -1,10 +1,10 @@
-package org.combinators.graphics.application_domain
+package org.combinators.graphics.application_domain.gui
 
 class Element {
 
   var name : String = "default_name"
   var parent : Element = new Element()
   var children : List[Element] = List[Element]()
-  var layout : Layout = new Layout()
+  var layout : AbsoluteLayout = new AbsoluteLayout()
 
 }

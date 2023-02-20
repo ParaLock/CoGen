@@ -7,7 +7,7 @@ import org.combinators.ep.generator.Command._
 import org.combinators.ep.generator.{AbstractSyntax, NameProvider, TestImplementationProvider, Understands}
 import org.combinators.ep.generator.paradigm.AnyParadigm.syntax._
 import org.combinators.ep.generator.paradigm.{AddImport, AnyParadigm, ObjectOriented, ResolveImport}
-import org.combinators.graphics.application_domain.Text
+import org.combinators.graphics.application_domain.gui.Text
 
 /** Attempt to provide a hello world generator. */
 trait HelloWorldProvider {

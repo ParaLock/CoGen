@@ -1,4 +1,4 @@
-package org.combinators.graphics.providers
+package org.combinators.graphics.providers.javafx
 
 /* Generates Fibonacci Program. */
 
@@ -7,14 +7,13 @@ import com.github.javaparser.ast.PackageDeclaration
 import org.apache.commons.io.FileUtils
 import org.combinators.ep.generator.FileWithPathPersistable._
 import org.combinators.ep.generator.{FileWithPath, FileWithPathPersistable}
-import org.combinators.ep.language.java.paradigm.ObjectOriented
-import org.combinators.ep.language.java.{CodeGenerator, JavaNameProvider, PartiallyBoxed, Syntax}
+
 import java.nio.file.{Path, Paths}
 
 /**
  * Takes paradigm-independent specification for Fibonacci and generates Java code
  */
-class WindowMainJava {
+class ApplicationMain {
   val generator = CodeGenerator(
     CodeGenerator.defaultConfig.copy(
       boxLevel = PartiallyBoxed,
@@ -35,7 +34,7 @@ class WindowMainJava {
 //    generator.equalityInMethod
 //  )
 
-  val windowApproach = WindowObjectOrientedProvider[Syntax.default.type, generator.paradigm.type](generator.paradigm)(JavaNameProvider, generator.imperativeInMethod, generator.ooParadigm, generator.consoleInMethod, generator.arraysInMethod, generator.assertionsInMethod, generator.equalityInMethod, generator.intsInMethod, generator.assertionsInMethod, generator.equalityInMethod)
+  val windowApproach = ApplicationObjectOrientedProvider[Syntax.default.type, generator.paradigm.type](generator.paradigm)(JavaNameProvider, generator.imperativeInMethod, generator.ooParadigm, generator.consoleInMethod, generator.arraysInMethod, generator.assertionsInMethod, generator.equalityInMethod, generator.intsInMethod, generator.assertionsInMethod, generator.equalityInMethod)
 
 
   val persistable = FileWithPathPersistable[FileWithPath]
@@ -78,12 +77,12 @@ class WindowMainJava {
 }
 
 object WindowJavaDirectToDiskMain extends IOApp {
-  val targetDirectory = Paths.get("target", "window", "java")
+  val targetDirectory = Paths.get("target", "javafx", "java")
 
   def run(args: List[String]): IO[ExitCode] = {
     for {
       _ <- IO { print("Initializing Generator...") }
-      main <- IO { new WindowMainJava() }
+      main <- IO { new ApplicationMain() }
       _ <- IO { println("[OK]") }
       result <- main.runDirectToDisc(targetDirectory)
     } yield result

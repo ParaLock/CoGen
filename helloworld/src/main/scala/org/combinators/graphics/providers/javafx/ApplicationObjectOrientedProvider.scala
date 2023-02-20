@@ -1,15 +1,14 @@
-package org.combinators.graphics.providers
+package org.combinators.graphics.providers.javafx
 
 import org.combinators.ep.domain.abstractions.{DataType, DataTypeCase, TypeRep}
 import org.combinators.ep.generator.Command.Generator
-import org.combinators.ep.generator.paradigm.ObjectOriented
 import org.combinators.ep.generator.paradigm.control.Imperative
-import org.combinators.ep.generator.{AbstractSyntax, Command, NameProvider, Understands}
 import org.combinators.ep.generator.paradigm.ffi.{Arithmetic, Arrays, Assertions, Console, Equality}
 import org.combinators.ep.generator.paradigm.{AnyParadigm, FindClass, ObjectOriented}
+import org.combinators.ep.generator.{AbstractSyntax, NameProvider, Understands}
 
 
-trait WindowObjectOrientedProvider extends WindowProvider {
+trait ApplicationObjectOrientedProvider extends ApplicationProvider {
   val ooParadigm: ObjectOriented.WithBase[paradigm.type]
   val names: NameProvider[paradigm.syntax.Name]
   val ffiArithmetic: Arithmetic.WithBase[paradigm.MethodBodyContext, paradigm.type, Int]
@@ -20,14 +19,15 @@ trait WindowObjectOrientedProvider extends WindowProvider {
   val asserts: Assertions.WithBase[paradigm.MethodBodyContext, paradigm.type]
   val eqls: Equality.WithBase[paradigm.MethodBodyContext, paradigm.type]
 
+  import ooParadigm._
   import paradigm._
   import syntax._
-  import ooParadigm._
 
-  lazy val timesTwoName = names.mangle("mult_two")
-  lazy val sumToName = names.mangle("sum_to_n")
-  lazy val testWindowName = names.mangle("windowTest")
-  lazy val nName = names.mangle("n")
+  lazy val initFuncName = names.mangle("init")
+  lazy val startFuncName = names.mangle("start")
+  lazy val stopFuncName = names.mangle("stop")
+  lazy val mainFuncName = names.mangle("main")
+
 
   /**
    * Default registration for findClass, which works with each registerTypeMapping for the different approaches.
@@ -49,12 +49,8 @@ trait WindowObjectOrientedProvider extends WindowProvider {
    * This enables target-language classes to be retrieved from within the code generator in the Method, Class or Constructor contexts.
    */
   def registerTypeMapping(tpe: DataType): Generator[ProjectContext, Unit] = {
-    import paradigm.projectCapabilities.addTypeLookupForMethods
-    import ooParadigm.methodBodyCapabilities.canFindClassInMethod // must be present, regardless of IntelliJ
-    import ooParadigm.projectCapabilities.addTypeLookupForClasses
-    import ooParadigm.projectCapabilities.addTypeLookupForConstructors
-    import ooParadigm.classCapabilities.canFindClassInClass // must be present, regardless of IntelliJ
-    import ooParadigm.constructorCapabilities.canFindClassInConstructor // must be present, regardless of IntelliJ
+    import ooParadigm.projectCapabilities.{addTypeLookupForClasses, addTypeLookupForConstructors}
+    import paradigm.projectCapabilities.addTypeLookupForMethods // must be present, regardless of IntelliJ
     val dtpe = TypeRep.DataType(tpe)
     for {
       _ <- addTypeLookupForMethods(dtpe, domainTypeLookup(tpe))
@@ -64,8 +60,8 @@ trait WindowObjectOrientedProvider extends WindowProvider {
   }
 
   def instantiate(baseTpe: DataType, tpeCase: DataTypeCase, args: Expression*): Generator[MethodBodyContext, Expression] = {
-    import paradigm.methodBodyCapabilities._
     import ooParadigm.methodBodyCapabilities._
+    import paradigm.methodBodyCapabilities._
     for {
       rt <- findClass(names.mangle(names.conceptNameOf(tpeCase)))
       _ <- resolveAndAddImport(rt)
@@ -75,21 +71,51 @@ trait WindowObjectOrientedProvider extends WindowProvider {
   }
 
 
-  def make_mult_two(): Generator[paradigm.MethodBodyContext, Option[paradigm.syntax.Expression]] = {
+  def make_init_func(): Generator[paradigm.MethodBodyContext, Option[paradigm.syntax.Expression]] = {
     import paradigm.methodBodyCapabilities._
-    import ooParadigm.methodBodyCapabilities.getMember
-    import ooParadigm.methodBodyCapabilities.selfReference
+    for {
+
+      // call super.init()
+      // print window initialized message
+
+    } yield Some(n_mult)
+  }
+
+  def make_start_func(): Generator[paradigm.MethodBodyContext, Option[paradigm.syntax.Expression]] = {
+    import paradigm.methodBodyCapabilities._
     for {
       intType <- toTargetLanguageType(TypeRep.Int)
 
-      _ <- paradigm.methodBodyCapabilities.setParameters(Seq((nName, intType)))
-      _ <- paradigm.methodBodyCapabilities.setReturnType(intType)
-      args <- getArguments()
+      // Create parent group object
+      // Create parent scene object
+      // Add group object to scene
+      // Loop over elements in domain model
+      // Attach element to group object
+      // Call setAlignment on each element according to style
 
-      two <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, 2)
-      (name,tpe,n) = args.head
+      // Set primary stage title
+      // Call set stage scene
+      // Call stage show
 
-      n_mult <- ffiArithmetic.arithmeticCapabilities.mult(n, two)
+    } yield Some(n_mult)
+  }
+
+  def make_stop_func(): Generator[paradigm.MethodBodyContext, Option[paradigm.syntax.Expression]] = {
+    import paradigm.methodBodyCapabilities._
+    for {
+      intType <- toTargetLanguageType(TypeRep.Int)
+
+      // Call super.stop()
+
+    } yield Some(n_mult)
+  }
+
+  def make_main_func(): Generator[paradigm.MethodBodyContext, Option[paradigm.syntax.Expression]] = {
+    import paradigm.methodBodyCapabilities._
+    for {
+      intType <- toTargetLanguageType(TypeRep.Int)
+
+      // Call launch
 
     } yield Some(n_mult)
   }
@@ -99,37 +125,26 @@ trait WindowObjectOrientedProvider extends WindowProvider {
     val makeClass: Generator[ClassContext, Unit] = {
       import classCapabilities._
       for {
-         _ <- addMethod(names.mangle("mult_two"), make_mult_two()) // HACK
+         _ <- addMethod(names.mangle("init"), make_init_func())
+         _ <- addMethod(names.mangle("start"), make_start_func())
+         _ <- addMethod(names.mangle("stop"), make_stop_func())
+         _ <- addMethod(names.mangle("main"), make_stop_func())
       } yield ()
     }
 
     addClassToProject(makeClass, names.mangle(clazzName))
   }
 
-  def make_window_test(): Generator[paradigm.MethodBodyContext, Seq[paradigm.syntax.Expression]] = {
-    import paradigm.methodBodyCapabilities._
-    import ffiEquality.equalityCapabilities._
-    for {
-      two <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, 42)
-    } yield Seq(two)
-  }
-
-  def make_test() : Generator[paradigm.TestContext, Unit] = {
-    for {
-      _ <- paradigm.testCapabilities.addTestCase(make_window_test(), testWindowName)
-    } yield ()
-  }
-
   def implement(): Generator[paradigm.ProjectContext, Unit] = {
     for {
-      _ <- make_class("Window")
+      _ <- make_class("SampleApplication")
     } yield ()
   }
 
 }
 
-object WindowObjectOrientedProvider {
-  type WithParadigm[P <: AnyParadigm] = WindowObjectOrientedProvider { val paradigm: P }
+object ApplicationObjectOrientedProvider {
+  type WithParadigm[P <: AnyParadigm] = ApplicationObjectOrientedProvider { val paradigm: P }
   type WithSyntax[S <: AbstractSyntax] = WithParadigm[AnyParadigm.WithSyntax[S]]
 
   def apply[S <: AbstractSyntax, P <: AnyParadigm.WithSyntax[S]]
@@ -145,8 +160,8 @@ object WindowObjectOrientedProvider {
    ffiassert: Assertions.WithBase[base.MethodBodyContext, base.type],
    ffiequal: Equality.WithBase[base.MethodBodyContext, base.type]
   )
-  : WindowObjectOrientedProvider.WithParadigm[base.type] =
-    new WindowObjectOrientedProvider {
+  : ApplicationObjectOrientedProvider.WithParadigm[base.type] =
+    new ApplicationObjectOrientedProvider {
       override val paradigm: base.type = base
       val impParadigm: imp.type = imp
       override val names: NameProvider[paradigm.syntax.Name] = nameProvider
