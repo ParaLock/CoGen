@@ -4,4 +4,13 @@ class Shader(
               programPath:String
             ) {
 
+  def bind(buff: LargeBuffer) = {
+
+  }
+
+  def bind(buff: SmallBuffer) = {
+
+  }
+
+
 }

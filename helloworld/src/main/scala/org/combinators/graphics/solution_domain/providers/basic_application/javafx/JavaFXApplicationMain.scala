@@ -1,4 +1,4 @@
-package org.combinators.game_engine.window
+package org.combinators.graphics.solution_domain.providers.basic_application.javafx
 
 /* Generates Fibonacci Program. */
 
@@ -14,28 +14,34 @@ import java.nio.file.{Path, Paths}
 /**
  * Takes paradigm-independent specification for Fibonacci and generates Java code
  */
-class WindowMainJava {
+class JavaFXApplicationMain {
+
   val generator = CodeGenerator(
     CodeGenerator.defaultConfig.copy(
       boxLevel = PartiallyBoxed,
       targetPackage = new PackageDeclaration(
-        ObjectOriented.fromComponents("window")
+        ObjectOriented.fromComponents("javafx_application")
       )
     )
   )
 
-  //  val windowApproach = WindowProvider[
-  //    Syntax.default.type, generator.paradigm.type
-  //  ](generator.paradigm)(
-  //    JavaNameProvider,
-  //    generator.ooParadigm,
-  //    generator.imperativeInMethod,
-  //    generator.intsInMethod,
-  //    generator.assertionsInMethod,
-  //    generator.equalityInMethod
-  //  )
-
-  val windowApproach = WindowObjectOrientedProvider[Syntax.default.type, generator.paradigm.type](generator.paradigm)(JavaNameProvider, generator.imperativeInMethod, generator.ooParadigm, generator.consoleInMethod, generator.arraysInMethod, generator.assertionsInMethod, generator.equalityInMethod, generator.intsInMethod, generator.assertionsInMethod, generator.equalityInMethod)
+  val appApproach = BasicApplicationOOProvider[
+    Syntax.default.type,
+    generator.paradigm.type
+  ](
+    generator.paradigm
+  )(
+    JavaNameProvider,
+    generator.imperativeInMethod,
+    generator.ooParadigm,
+    generator.consoleInMethod,
+    generator.arraysInMethod,
+    generator.assertionsInMethod,
+    generator.equalityInMethod,
+    generator.intsInMethod,
+    generator.assertionsInMethod,
+    generator.equalityInMethod
+  )
 
 
   val persistable = FileWithPathPersistable[FileWithPath]
@@ -51,7 +57,7 @@ class WindowMainJava {
           _ <- generator.equalityInMethod.enable()
           _ <- generator.assertionsInMethod.enable()
 
-          _ <- windowApproach.implement()
+          _ <- appApproach.implement()
         } yield ()
       }
 
@@ -77,13 +83,13 @@ class WindowMainJava {
   }
 }
 
-object WindowJavaDirectToDiskMain extends IOApp {
-  val targetDirectory = Paths.get("target", "window", "java")
+object BasicApplicationDirectToDiskMain extends IOApp {
+  val targetDirectory = Paths.get("target", "javafx_application", "java")
 
   def run(args: List[String]): IO[ExitCode] = {
     for {
       _ <- IO { print("Initializing Generator...") }
-      main <- IO { new WindowMainJava() }
+      main <- IO { new JavaFXApplicationMain() }
       _ <- IO { println("[OK]") }
       result <- main.runDirectToDisc(targetDirectory)
     } yield result

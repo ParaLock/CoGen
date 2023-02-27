@@ -1,5 +1,7 @@
 package org.combinators.graphics.application_domain.gpu
 
-class LargeBuffer(dataHandle: Int) {
-
+class Matrix4f {
+  def dataHandle(): Int = {
+    1111
+  }
 }

@@ -1,4 +1,4 @@
-package org.combinators.game_engine.window
+package org.combinators.graphics.solution_domain.providers.basic_application.javafx
 
 import org.combinators.ep.domain.abstractions._
 import org.combinators.ep.domain.instances.{DataTypeInstance, InstanceRep}
@@ -8,7 +8,7 @@ import org.combinators.ep.generator.paradigm.{AddImport, AnyParadigm, ObjectOrie
 import org.combinators.ep.generator.{NameProvider, Understands}
 
 /** Attempt to provide a window provider -- perhaps can be abstracted.... */
-trait WindowProvider {
+trait BasicApplicationProvider {
   val paradigm: AnyParadigm
   val names: NameProvider[paradigm.syntax.Name]
   val ooParadigm: ObjectOriented.WithBase[paradigm.type]

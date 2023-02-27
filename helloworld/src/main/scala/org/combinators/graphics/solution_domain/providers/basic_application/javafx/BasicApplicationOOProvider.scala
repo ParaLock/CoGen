@@ -1,4 +1,4 @@
-package org.combinators.game_engine.window
+package org.combinators.graphics.solution_domain.providers.basic_application.javafx
 
 import org.combinators.ep.domain.abstractions.{DataType, DataTypeCase, TypeRep}
 import org.combinators.ep.generator.Command.Generator
@@ -9,8 +9,9 @@ import org.combinators.ep.generator.paradigm.ffi.{Arithmetic, Arrays, Assertions
 import org.combinators.ep.generator.paradigm.{AnyParadigm, FindClass, ObjectOriented}
 
 
-trait WindowObjectOrientedProvider extends WindowProvider {
+trait BasicApplicationOOProvider extends BasicApplicationProvider {
   val ooParadigm: ObjectOriented.WithBase[paradigm.type]
+  val impParadigm: Imperative.WithBase[paradigm.MethodBodyContext,paradigm.type]
   val names: NameProvider[paradigm.syntax.Name]
   val ffiArithmetic: Arithmetic.WithBase[paradigm.MethodBodyContext, paradigm.type, Int]
   val ffiAssertions : Assertions.WithBase[paradigm.MethodBodyContext, paradigm.type]
@@ -24,11 +25,11 @@ trait WindowObjectOrientedProvider extends WindowProvider {
   import syntax._
   import ooParadigm._
 
-  lazy val timesTwoName = names.mangle("mult_two")
   lazy val initFuncName = names.mangle("init")
-  lazy val sumToName = names.mangle("sum_to_n")
+  lazy val startFuncName = names.mangle("start")
+  lazy val stopFuncName = names.mangle("stop")
+  lazy val mainFuncName = names.mangle("main")
   lazy val testWindowName = names.mangle("windowTest")
-  lazy val nName = names.mangle("n")
 
   /**
    * Default registration for findClass, which works with each registerTypeMapping for the different approaches.
@@ -75,73 +76,173 @@ trait WindowObjectOrientedProvider extends WindowProvider {
     } yield res
   }
 
-
-  def make_mult_two(): Generator[paradigm.MethodBodyContext, Option[paradigm.syntax.Expression]] = {
-    import paradigm.methodBodyCapabilities._
-    import ooParadigm.methodBodyCapabilities.getMember
-    import ooParadigm.methodBodyCapabilities.selfReference
-    for {
-      intType <- toTargetLanguageType(TypeRep.Int)
-
-      _ <- paradigm.methodBodyCapabilities.setParameters(Seq((nName, intType)))
-      _ <- paradigm.methodBodyCapabilities.setReturnType(intType)
-      args <- getArguments()
-
-      two <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, 2)
-      (name,tpe,n) = args.head
-
-      n_mult <- ffiArithmetic.arithmeticCapabilities.mult(n, two)
-
-    } yield Some(n_mult)
-  }
-
-  def make_init_signature(): Generator[paradigm.MethodBodyContext, Unit] = {
-    import paradigm.methodBodyCapabilities._
-    import ooParadigm.methodBodyCapabilities.getMember
-    import ooParadigm.methodBodyCapabilities._
-    for {
-
-      intType <- toTargetLanguageType(TypeRep.Int)
-      unitType <- toTargetLanguageType(TypeRep.Unit)
-      _ <- paradigm.methodBodyCapabilities.setReturnType(intType)
-
-
-    } yield ()
-  }
-
   def make_init(): Generator[paradigm.MethodBodyContext, Option[Expression]] = {
     import paradigm.methodBodyCapabilities._
-    import ooParadigm.methodBodyCapabilities.getMember
     import ooParadigm.methodBodyCapabilities._
-    //import impParadigm._
     for {
-      _ <- make_init_signature()
+
+      intType <- toTargetLanguageType(TypeRep.Int)
+      _ <- paradigm.methodBodyCapabilities.setReturnType(intType)
 
       sp <- superReference()
-
-      args <- getArguments()
-
       init <- getMember(sp, initFuncName)
-
       result <- apply(init, Seq.empty)
-
-      //stmt <- liftExpression(call)
 
     } yield Some(result)
   }
 
+  def make_class_instance(typeName:String, varName: String, constructorParams: Seq[Expression]): Generator[paradigm.MethodBodyContext, Option[paradigm.syntax.Expression]]  = {
+    import paradigm.methodBodyCapabilities._
+    import ooParadigm.methodBodyCapabilities._
+    import impParadigm.imperativeCapabilities._
 
+    for {
+      classType <- findClass(names.mangle(typeName))
+      _ <- resolveAndAddImport(classType)
+      classObj <- instantiateObject(classType, constructorParams)
+      classObjName <- freshName(names.mangle(varName))
+      sceneObjVar <- declareVar(classObjName, classType, Some(classObj))
+    } yield Some(sceneObjVar)
+  }
+
+  def print_message(msg: String): Generator[paradigm.MethodBodyContext, Option[paradigm.syntax.Expression]] = {
+    import paradigm.methodBodyCapabilities._
+    import ooParadigm.methodBodyCapabilities._
+    import impParadigm.imperativeCapabilities._
+
+    for {
+      // Generate print statement
+      msgVal <- paradigm.methodBodyCapabilities.reify(
+        TypeRep.String,
+        msg
+      )
+      output <- console.consoleCapabilities.print(msgVal)
+      le <- liftExpression(output)
+      _ <- addBlockDefinitions(Seq(le))
+
+    } yield Some(output)
+  }
+
+
+  def make_start_func(): Generator[paradigm.MethodBodyContext, Option[paradigm.syntax.Expression]] = {
+      import paradigm.methodBodyCapabilities._
+      import ooParadigm.methodBodyCapabilities._
+      import impParadigm.imperativeCapabilities._
+      for {
+
+        // Make signature
+        unitType <- toTargetLanguageType(TypeRep.Unit)
+        _ <- paradigm.methodBodyCapabilities.setReturnType(unitType)
+        stageType <- findClass(names.mangle("Stage"))
+        _ <- resolveAndAddImport(stageType)
+        _ <- setParameters(Seq((names.mangle("primaryStage"), stageType)))
+        //----
+
+        args <- getArguments()
+        (name, tpe, primaryStage) = args.head
+
+        _ <- print_message("Inside init() method! Perform necessary initializations here.")
+
+        labelObjWrapper <- make_class_instance(
+          "Label",
+          "label",
+          Seq.empty
+        )
+
+        labelObj = labelObjWrapper.get
+
+        sceneObjWrapper <- make_class_instance("Scene", "scene", Seq(labelObj))
+        sceneObj = sceneObjWrapper.get
+
+        alignFunc <- getMember(
+          sceneObj,
+          names.mangle("setAlignment")
+        )
+
+        _ <- apply(alignFunc, Seq.empty)
+
+
+
+
+        //        Label label = new Label("Hello World");
+//        label.setAlignment(Pos.CENTER);
+//        Scene scene = new Scene(label);
+//
+//        primaryStage.setTitle("Hello World Application");
+//        primaryStage.setScene(scene);
+//        primaryStage.show();
+
+
+        // Add group object to scene
+        // Loop over elements in domain model
+        // Attach element to group object
+        // Call setAlignment on each element according to style
+
+        // Set primary stage title
+        // Call set stage scene
+        // Call stage show
+
+      } yield Some(labelObj)
+    }
+
+    def make_stop_func(): Generator[paradigm.MethodBodyContext, Option[Expression]] = {
+      import paradigm.methodBodyCapabilities._
+      import ooParadigm.methodBodyCapabilities._
+      import impParadigm.imperativeCapabilities._
+      for {
+
+        // Make signatures
+        intType <- toTargetLanguageType(TypeRep.Int)
+        _ <- paradigm.methodBodyCapabilities.setReturnType(intType)
+
+        _ <- print_message("Inside stop() method! Destroy resources. Perform Cleanup.")
+
+        // call super.stop()
+        sp <- superReference()
+        stopFunc <- getMember(sp, stopFuncName)
+        result <- apply(stopFunc, Seq.empty)
+
+      } yield Some(result)
+    }
+
+//  def make_main_func(): Generator[paradigm.MethodBodyContext, Option[paradigm.syntax.Expression]] = {
+//      import paradigm.methodBodyCapabilities._
+//      import ooParadigm.methodBodyCapabilities._
+//      import impParadigm.imperativeCapabilities._
+//      for {
+//
+//        // Make signature
+//        _ <- setStatic()
+//        arrayType <- toTargetLanguageType(TypeRep.Array(TypeRep.String))
+//        _ <- resolveAndAddImport(arrayType)
+//        unitType <- toTargetLanguageType(TypeRep.Unit)
+//        _ <- setReturnType(unitType)
+//        _ <- setParameters(Seq((names.mangle("args"), arrayType)))
+//        // --------------
+//
+//        selfRef <- selfReference()
+//        launchRef <- getMember(selfRef, )
+//        result <- apply(selfRef, Seq.empty)
+//
+//      } yield Some(result)
+//    }
   def make_class(clazzName: String): Generator[ProjectContext, Unit] = {
     import ooParadigm.projectCapabilities._
     val makeClass: Generator[ClassContext, Unit] = {
       import classCapabilities._
-      val app = Seq(names.mangle("javafx"), names.mangle("application"), names.mangle("Application"))
+      val javafx_app_import = Seq(
+        names.mangle("javafx"),
+        names.mangle("application"),
+        names.mangle("Application")
+      )
       for {
-        pt <- findClass(app : _ *)
-        //_ <- resolveAndAddImport(pt)
+        pt <- findClass(javafx_app_import : _ *)
+        _ <- resolveAndAddImport(pt)
         _ <- addParent(pt)
         _ <- addMethod(initFuncName, make_init())
-        _ <- addMethod(names.mangle("mult_two"), make_mult_two()) // HACK
+        _ <- addMethod(startFuncName, make_start_func())
+        _ <- addMethod(stopFuncName, make_stop_func())
+
       } yield ()
     }
 
@@ -164,14 +265,14 @@ trait WindowObjectOrientedProvider extends WindowProvider {
 
   def implement(): Generator[paradigm.ProjectContext, Unit] = {
     for {
-      _ <- make_class("Window")
+      _ <- make_class("BasicApplicationJavaFX")
     } yield ()
   }
 
 }
 
-object WindowObjectOrientedProvider {
-  type WithParadigm[P <: AnyParadigm] = WindowObjectOrientedProvider { val paradigm: P }
+object BasicApplicationOOProvider {
+  type WithParadigm[P <: AnyParadigm] = BasicApplicationOOProvider { val paradigm: P }
   type WithSyntax[S <: AbstractSyntax] = WithParadigm[AnyParadigm.WithSyntax[S]]
 
   def apply[S <: AbstractSyntax, P <: AnyParadigm.WithSyntax[S]]
@@ -187,8 +288,8 @@ object WindowObjectOrientedProvider {
    ffiassert: Assertions.WithBase[base.MethodBodyContext, base.type],
    ffiequal: Equality.WithBase[base.MethodBodyContext, base.type]
   )
-  : WindowObjectOrientedProvider.WithParadigm[base.type] =
-    new WindowObjectOrientedProvider {
+  : BasicApplicationOOProvider.WithParadigm[base.type] =
+    new BasicApplicationOOProvider {
       override val paradigm: base.type = base
       val impParadigm: imp.type = imp
       override val names: NameProvider[paradigm.syntax.Name] = nameProvider

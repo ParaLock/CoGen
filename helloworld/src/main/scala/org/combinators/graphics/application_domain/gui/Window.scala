@@ -4,8 +4,7 @@ import scala.collection.mutable.ListBuffer
 
 class Window(
               val width:Int,
-              val height:Int,
-              val mode:WindowMode
+              val height:Int
             ) {
 
   val elements: ListBuffer[Element] = ListBuffer[Element]()
