@@ -1,7 +1,7 @@
 package org.combinators.graphics.solution_domain.providers.basic_application.javafx
 
 import org.combinators.ep.domain.abstractions.{DataType, DataTypeCase, TypeRep}
-import org.combinators.ep.generator.Command.Generator
+import org.combinators.ep.generator.Command.{Generator, lift}
 import org.combinators.ep.generator.paradigm.ObjectOriented
 import org.combinators.ep.generator.paradigm.control.Imperative
 import org.combinators.ep.generator.{AbstractSyntax, Command, NameProvider, Understands}
@@ -79,19 +79,23 @@ trait BasicApplicationOOProvider extends BasicApplicationProvider {
   def make_init(): Generator[paradigm.MethodBodyContext, Option[Expression]] = {
     import paradigm.methodBodyCapabilities._
     import ooParadigm.methodBodyCapabilities._
+    import impParadigm.imperativeCapabilities._
     for {
 
-      intType <- toTargetLanguageType(TypeRep.Int)
-      _ <- paradigm.methodBodyCapabilities.setReturnType(intType)
+      unitType <- toTargetLanguageType(TypeRep.Unit)
+      _ <- paradigm.methodBodyCapabilities.setReturnType(unitType)
 
       sp <- superReference()
       init <- getMember(sp, initFuncName)
       result <- apply(init, Seq.empty)
 
-    } yield Some(result)
+      stmt <- liftExpression(result)
+      _ <- addBlockDefinitions(Seq(stmt))
+
+    } yield None
   }
 
-  def make_class_instance(typeName:String, varName: String, constructorParams: Seq[Expression]): Generator[paradigm.MethodBodyContext, Option[paradigm.syntax.Expression]]  = {
+  def make_class_instance(typeName:String, varName: String, constructorParams: Seq[Expression]): Generator[paradigm.MethodBodyContext, paradigm.syntax.Expression]  = {
     import paradigm.methodBodyCapabilities._
     import ooParadigm.methodBodyCapabilities._
     import impParadigm.imperativeCapabilities._
@@ -102,7 +106,7 @@ trait BasicApplicationOOProvider extends BasicApplicationProvider {
       classObj <- instantiateObject(classType, constructorParams)
       classObjName <- freshName(names.mangle(varName))
       sceneObjVar <- declareVar(classObjName, classType, Some(classObj))
-    } yield Some(sceneObjVar)
+    } yield sceneObjVar
   }
 
   def print_message(msg: String): Generator[paradigm.MethodBodyContext, Option[paradigm.syntax.Expression]] = {
@@ -112,7 +116,7 @@ trait BasicApplicationOOProvider extends BasicApplicationProvider {
 
     for {
       // Generate print statement
-      msgVal <- paradigm.methodBodyCapabilities.reify(
+      msgVal <- reify(
         TypeRep.String,
         msg
       )
@@ -130,8 +134,10 @@ trait BasicApplicationOOProvider extends BasicApplicationProvider {
       import impParadigm.imperativeCapabilities._
       for {
 
-        // Make signature
         unitType <- toTargetLanguageType(TypeRep.Unit)
+        intType <- toTargetLanguageType(TypeRep.Int)
+
+        // Make signature
         _ <- paradigm.methodBodyCapabilities.setReturnType(unitType)
         stageType <- findClass(names.mangle("Stage"))
         _ <- resolveAndAddImport(stageType)
@@ -143,23 +149,51 @@ trait BasicApplicationOOProvider extends BasicApplicationProvider {
 
         _ <- print_message("Inside init() method! Perform necessary initializations here.")
 
-        labelObjWrapper <- make_class_instance(
+        labelObj <- make_class_instance(
           "Label",
           "label",
           Seq.empty
         )
 
-        labelObj = labelObjWrapper.get
+        sceneObj <- make_class_instance(
+          "Scene",
+          "scene",
+          Seq.empty
+        )
 
-        sceneObjWrapper <- make_class_instance("Scene", "scene", Seq(labelObj))
-        sceneObj = sceneObjWrapper.get
+//        testType <- findClass(names.mangle("InovkeTest"))
+//        _ <- resolveAndAddImport(testType)
+//        testObj <- instantiateObject(classType, Seq.empty)
+//        testObjName <- freshName(names.mangle("test"))
+//        sceneObjVar <- declareVar(classObjName, classType, Some(classObj))
 
+//
         alignFunc <- getMember(
           sceneObj,
           names.mangle("setAlignment")
         )
 
-        _ <- apply(alignFunc, Seq.empty)
+        stmt <- apply(alignFunc, Seq.empty)
+        returnVarName <- freshName(names.mangle("abc"))
+        returnVar <- declareVar(returnVarName,intType, Some(stmt))
+        liftedStmt <- liftExpression(stmt)
+        _ <- addBlockDefinitions(Seq(liftedStmt))
+
+
+        testFunc <- getMember(
+          primaryStage,
+          names.mangle("testFunc")
+        )
+        stmt2 <- apply(testFunc, Seq.empty)
+        liftedStmt2 <- liftExpression(stmt2)
+        _ <- addBlockDefinitions(Seq(liftedStmt2))
+
+
+        self <- selfReference()
+        member <- getMember(self, names.mangle("myMember"))
+
+        stmt3 <- assignVar(member, stmt2)
+        _ <- addBlockDefinitions(Seq(stmt3))
 
 
 
@@ -182,7 +216,7 @@ trait BasicApplicationOOProvider extends BasicApplicationProvider {
         // Call set stage scene
         // Call stage show
 
-      } yield Some(labelObj)
+      } yield None
     }
 
     def make_stop_func(): Generator[paradigm.MethodBodyContext, Option[Expression]] = {
