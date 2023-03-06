@@ -1,7 +1,7 @@
 package org.combinators.robotics.examples
 
 import org.combinators.ep.domain.tree.Node
-import org.combinators.robotics.application_domain.{AnalogSensor, Behaviour, DigitalSensor, MotorActuator, TimeBasedStrategy}
+import org.combinators.robotics.domain_model.{AnalogSensor, Behaviour, DigitalSensor, MotorActuator, TimeBasedStrategy}
 
 class RoboticsDomain {
   def build_simple_robot(): Unit = {
