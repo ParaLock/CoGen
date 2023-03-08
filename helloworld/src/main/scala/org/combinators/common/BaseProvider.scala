@@ -17,7 +17,7 @@ trait BaseProvider {
   val console: Console.WithBase[paradigm.MethodBodyContext, paradigm.type]
   val impParadigm: Imperative.WithBase[paradigm.MethodBodyContext,paradigm.type]
   val ooParadigm: ObjectOriented.WithBase[paradigm.type]
-  val impConstructorParadigm: Imperative.WithBase[ooParadigm.ConstructorContext, paradigm.type]
+  //val impConstructorParadigm: Imperative.WithBase[ooParadigm.ConstructorContext, paradigm.type]
   import paradigm._
   import syntax._
 
@@ -26,7 +26,7 @@ trait BaseProvider {
                            typeName: String,
                            varName: String,
                            constructorParams: Seq[Expression]
-                         ): Generator[paradigm.MethodBodyContext, paradigm.syntax.Expression] = {
+                         ): Generator[MethodBodyContext, paradigm.syntax.Expression] = {
     import impParadigm.imperativeCapabilities._
     import ooParadigm.methodBodyCapabilities._
     import paradigm.methodBodyCapabilities._
@@ -41,21 +41,21 @@ trait BaseProvider {
   }
 
 
-  def make_class_instantiation_in_constructor(
-                                typeName: String,
-                                varName: String,
-                                constructorParams: Seq[Expression]
-                              ): Generator[ooParadigm.ConstructorContext, paradigm.syntax.Expression] = {
-    import ooParadigm.constructorCapabilities._
-    import impConstructorParadigm.imperativeCapabilities._
-    for {
-      classType <- findClass(names.mangle(typeName))
-      _ <- resolveAndAddImport(classType)
-      classObj <- instantiateObject(classType, constructorParams)
-      classObjName <- freshName(names.mangle(varName))
-      sceneObjVar <- declareVar(classObjName, classType, Some(classObj))
-    } yield sceneObjVar
-  }
+//  def make_class_instantiation_in_constructor(
+//                                typeName: String,
+//                                varName: String,
+//                                constructorParams: Seq[Expression]
+//                              ): Generator[ooParadigm.ConstructorContext, paradigm.syntax.Expression] = {
+//    import ooParadigm.constructorCapabilities._
+//    //import impConstructorParadigm.imperativeCapabilities._
+//    for {
+//      classType <- findClass(names.mangle(typeName))
+//      _ <- resolveAndAddImport(classType)
+//      classObj <- instantiateObject(classType, constructorParams)
+//      classObjName <- freshName(names.mangle(varName))
+//      sceneObjVar <- declareVar(classObjName, classType, Some(classObj))
+//    } yield sceneObjVar
+//  }
 
   def make_member_var_assignment(
                                      expr: Expression,

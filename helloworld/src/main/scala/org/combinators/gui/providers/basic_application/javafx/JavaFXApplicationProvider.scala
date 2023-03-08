@@ -1,7 +1,7 @@
 package org.combinators.gui.providers.basic_application.javafx
 
 import com.github.javaparser.ast.ImportDeclaration
-import org.combinators.common.BaseProvider
+import org.combinators.common._
 import org.combinators.ep.domain.abstractions.{DataType, DataTypeCase, TypeRep}
 import org.combinators.ep.generator.Command.{Generator, lift}
 import org.combinators.ep.generator.paradigm.ObjectOriented
@@ -14,7 +14,7 @@ import org.combinators.ep.generator.paradigm.{AnyParadigm, FindClass, ObjectOrie
 trait JavaFXApplicationProvider extends BaseProvider {
   val ooParadigm: ObjectOriented.WithBase[paradigm.type]
   val impParadigm: Imperative.WithBase[paradigm.MethodBodyContext,paradigm.type]
-  val impConstructorParadigm: Imperative.WithBase[ooParadigm.ConstructorContext, paradigm.type]
+  //val impConstructorParadigm: Imperative.WithBase[ooParadigm.ConstructorContext, paradigm.type]
   val names: NameProvider[paradigm.syntax.Name]
   val ffiArithmetic: Arithmetic.WithBase[paradigm.MethodBodyContext, paradigm.type, Int]
   val ffiAssertions : Assertions.WithBase[paradigm.MethodBodyContext, paradigm.type]
@@ -105,7 +105,12 @@ trait JavaFXApplicationProvider extends BaseProvider {
       import paradigm.methodBodyCapabilities._
       import ooParadigm.methodBodyCapabilities._
       import impParadigm.imperativeCapabilities._
+
+      //val builder = new Builder[paradigm.MethodBodyContext](this)
+
       for {
+
+
 
         unitType <- toTargetLanguageType(TypeRep.Unit)
         intType <- toTargetLanguageType(TypeRep.Int)
@@ -339,7 +344,7 @@ object JavaFXApplicationProvider {
   (base: P)
   (nameProvider: NameProvider[base.syntax.Name],
    imp: Imperative.WithBase[base.MethodBodyContext, base.type],
-   impConstructor: Imperative.WithBase[ObjectOriented.WithBase[base.type], base.type],
+   //impConstructor: Imperative.WithBase[ObjectOriented.WithBase[base.type], base.type],
    oo: ObjectOriented.WithBase[base.type],
    con: Console.WithBase[base.MethodBodyContext, base.type],
    arr: Arrays.WithBase[base.MethodBodyContext, base.type],
@@ -353,7 +358,7 @@ object JavaFXApplicationProvider {
     new JavaFXApplicationProvider {
       override val paradigm: base.type = base
       val impParadigm: imp.type = imp
-      val impConstructorParadigm: impConstructor.type = impConstructor
+      //val impConstructorParadigm: impConstructor.type = impConstructor
       override val names: NameProvider[paradigm.syntax.Name] = nameProvider
       override val ooParadigm: ObjectOriented.WithBase[paradigm.type] = oo
       override val console: Console.WithBase[base.MethodBodyContext, paradigm.type] = con
