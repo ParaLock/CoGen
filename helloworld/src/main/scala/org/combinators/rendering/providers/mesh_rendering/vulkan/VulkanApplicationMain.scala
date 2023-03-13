@@ -1,4 +1,4 @@
-package org.combinators.gui.providers.basic_application.qt
+package org.combinators.gui.providers.mesh_rendering.vulkan
 
 /* Generates Fibonacci Program. */
 
@@ -14,18 +14,18 @@ import java.nio.file.{Path, Paths}
 /**
  * Takes paradigm-independent specification for Fibonacci and generates Java code
  */
-class QTApplicationMain {
+class VulkanApplicationMain {
 
   val generator = CodeGenerator(
     CodeGenerator.defaultConfig.copy(
       boxLevel = PartiallyBoxed,
       targetPackage = new PackageDeclaration(
-        ObjectOriented.fromComponents("qt_application")
+        ObjectOriented.fromComponents("vulkan_application")
       )
     )
   )
 
-  val appApproach = QTApplicationProvider[
+  val appApproach = VulkanApplicationProvider[
     Syntax.default.type,
     generator.paradigm.type
   ](
@@ -93,12 +93,12 @@ class QTApplicationMain {
 }
 
 object BasicApplicationDirectToDiskMain extends IOApp {
-  val targetDirectory = Paths.get("target", "qt_basic_application", "java")
+  val targetDirectory = Paths.get("target", "vulkan_application", "java")
 
   def run(args: List[String]): IO[ExitCode] = {
     for {
       _ <- IO { print("Initializing Generator...") }
-      main <- IO { new QTApplicationMain() }
+      main <- IO { new VulkanApplicationMain() }
       _ <- IO { println("[OK]") }
       result <- main.runDirectToDisc(targetDirectory)
     } yield result

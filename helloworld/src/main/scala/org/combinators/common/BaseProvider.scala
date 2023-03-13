@@ -21,6 +21,26 @@ trait BaseProvider {
   import paradigm._
   import syntax._
 
+  def make_field_class_assignment(
+                                      className: String,
+                                      fieldName: String,
+                                      constructorParams: Seq[Expression]
+                                    ): Generator[MethodBodyContext, Option[paradigm.syntax.Expression]] = {
+    import impParadigm.imperativeCapabilities._
+    import ooParadigm.methodBodyCapabilities._
+    import paradigm.methodBodyCapabilities._
+    for {
+
+      selfRef <- selfReference()
+      fieldVar <- getMember(selfRef, names.mangle(fieldName))
+      classType <- findClass(names.mangle(className))
+      obj <- instantiateObject(classType, constructorParams)
+      expr <- assignVar(fieldVar, obj)
+      _ <- addBlockDefinitions(Seq(expr))
+
+    } yield None
+
+  }
 
   def make_class_instantiation(
                            typeName: String,
@@ -57,7 +77,7 @@ trait BaseProvider {
 //    } yield sceneObjVar
 //  }
 
-  def make_member_var_assignment(
+  def make_field_assignment(
                                      expr: Expression,
                                      memberVarName: String
                                    ): Generator[paradigm.MethodBodyContext, Unit] = {
