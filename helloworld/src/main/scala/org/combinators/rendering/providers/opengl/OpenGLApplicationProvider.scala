@@ -1,4 +1,4 @@
-package org.combinators.gui.providers.basic_application.javafx
+package org.combinators.rendering.providers.opengl
 
 import com.github.javaparser.ast.ImportDeclaration
 import org.combinators.common._
@@ -11,10 +11,9 @@ import org.combinators.ep.generator.paradigm.ffi.{Arithmetic, Arrays, Assertions
 import org.combinators.ep.generator.paradigm.{AnyParadigm, FindClass, ObjectOriented}
 
 
-trait JavaFXApplicationProvider extends BaseProvider {
+trait OpenGLApplicationProvider extends BaseProvider {
   val ooParadigm: ObjectOriented.WithBase[paradigm.type]
   val impParadigm: Imperative.WithBase[paradigm.MethodBodyContext,paradigm.type]
-  //val impConstructorParadigm: Imperative.WithBase[ooParadigm.ConstructorContext, paradigm.type]
   val names: NameProvider[paradigm.syntax.Name]
   val ffiArithmetic: Arithmetic.WithBase[paradigm.MethodBodyContext, paradigm.type, Int]
   val ffiAssertions : Assertions.WithBase[paradigm.MethodBodyContext, paradigm.type]
@@ -33,6 +32,7 @@ trait JavaFXApplicationProvider extends BaseProvider {
   lazy val stopFuncName = names.mangle("stop")
   lazy val mainFuncName = names.mangle("main")
   lazy val testWindowName = names.mangle("windowTest")
+
 
   /**
    * Default registration for findClass, which works with each registerTypeMapping for the different approaches.
@@ -79,235 +79,32 @@ trait JavaFXApplicationProvider extends BaseProvider {
     } yield res
   }
 
-  def make_init(): Generator[paradigm.MethodBodyContext, Option[Expression]] = {
+  def make_main_func(): Generator[paradigm.MethodBodyContext, Option[Expression]] = {
     import paradigm.methodBodyCapabilities._
     import ooParadigm.methodBodyCapabilities._
     import impParadigm.imperativeCapabilities._
     for {
-      _ <- print_message("Inside init() method! Perform necessary initializations here.")
 
+      // Make signature
+      _ <- setStatic()
+      arrayType <- toTargetLanguageType(TypeRep.Array(TypeRep.String))
+      _ <- resolveAndAddImport(arrayType)
       unitType <- toTargetLanguageType(TypeRep.Unit)
-      _ <- paradigm.methodBodyCapabilities.setReturnType(unitType)
-
-      sp <- superReference()
-      init <- getMember(sp, initFuncName)
-      result <- apply(init, Seq.empty)
-
-      stmt <- liftExpression(result)
-      _ <- addBlockDefinitions(Seq(stmt))
+      _ <- setReturnType(unitType)
+      _ <- setParameters(Seq((names.mangle("args"), arrayType)))
+      // --------------
 
     } yield None
   }
 
 
-
-  def make_start_func(): Generator[paradigm.MethodBodyContext, Option[paradigm.syntax.Expression]] = {
-      import paradigm.methodBodyCapabilities._
-      import ooParadigm.methodBodyCapabilities._
-      import impParadigm.imperativeCapabilities._
-
-      //val builder = new Builder[paradigm.MethodBodyContext](this)
-
-      for {
-
-
-
-        unitType <- toTargetLanguageType(TypeRep.Unit)
-        intType <- toTargetLanguageType(TypeRep.Int)
-
-        // Make signature
-        _ <- paradigm.methodBodyCapabilities.setReturnType(unitType)
-        stageType <- findClass(names.mangle("Stage"))
-        _ <- resolveAndAddImport(stageType)
-        _ <- setParameters(Seq((names.mangle("primaryStage"), stageType)))
-        //----
-
-        args <- getArguments()
-        (name, tpe, primaryStage) = args.head
-
-        msg <- paradigm.methodBodyCapabilities.reify(
-          TypeRep.String,
-          "Hello World"
-        )
-
-        labelObj <- make_class_instantiation(
-          "Label",
-          "label",
-          Seq(msg)
-        )
-
-        sceneObj <- make_class_instantiation(
-          "Scene",
-          "scene",
-          Seq(labelObj)
-        )
-
-        title <- paradigm.methodBodyCapabilities.reify(
-          TypeRep.String,
-          "Hello World Application"
-        )
-
-        _ <- make_method_call(
-          sceneObj,
-          "setTitle",
-          Seq(title)
-        )
-
-        _ <- make_method_call(
-          sceneObj,
-          "setScene",
-          Seq(sceneObj)
-        )
-
-        //        testType <- findClass(names.mangle("InovkeTest"))
-//        _ <- resolveAndAddImport(testType)
-//        testObj <- instantiateObject(classType, Seq.empty)
-//        testObjName <- freshName(names.mangle("test"))
-//        sceneObjVar <- declareVar(classObjName, classType, Some(classObj))
-
-//
-//        alignFunc <- getMember(
-//          sceneObj,
-//          names.mangle("setAlignment")
-//        )
-//        stmt <- apply(alignFunc, Seq.empty)
-//        returnVarName <- freshName(names.mangle("abc"))
-//        returnVar <- declareVar(returnVarName,intType, Some(stmt))
-//        liftedStmt <- liftExpression(stmt)
-//        _ <- addBlockDefinitions(Seq(liftedStmt))
-//
-
-        _ <- make_method_call(
-            sceneObj,
-            "setAlignment",
-          Seq.empty
-          )
-
-//        _ <- make_method_call(
-//          sceneObj,
-//          "setAlignment",
-//          Seq.empty
-//        )
-//
-//        _ <- make_member_var_assignment(
-//          labelObj,
-//          "myMemberVar"
-//        )
-
-
-        //          obj: Expression,
-//        methodName: String,
-//        returnVarType: TypeRep,
-//        returnVarName: String
-//
-//        testFunc <- getMember(
-//          primaryStage,
-//          names.mangle("testFunc")
-//        )
-//        stmt2 <- apply(testFunc, Seq.empty)
-//        liftedStmt2 <- liftExpression(stmt2)
-//        _ <- addBlockDefinitions(Seq(liftedStmt2))
-//
-
-
-
-//
-
-
-        //        Label label = new Label("Hello World");
-//        label.setAlignment(Pos.CENTER);
-//        Scene scene = new Scene(label);
-//
-//        primaryStage.setTitle("Hello World Application");
-//        primaryStage.setScene(scene);
-//        primaryStage.show();
-
-
-        // Add group object to scene
-        // Loop over elements in domain model
-        // Attach element to group object
-        // Call setAlignment on each element according to style
-
-        // Set primary stage title
-        // Call set stage scene
-        // Call stage show
-
-      } yield None
-    }
-
-    def make_stop_func(): Generator[paradigm.MethodBodyContext, Option[Expression]] = {
-      import paradigm.methodBodyCapabilities._
-      import ooParadigm.methodBodyCapabilities._
-      import impParadigm.imperativeCapabilities._
-      for {
-
-        // Make signatures
-        intType <- toTargetLanguageType(TypeRep.Int)
-        _ <- paradigm.methodBodyCapabilities.setReturnType(intType)
-
-        _ <- print_message("Inside stop() method! Destroy resources. Perform Cleanup.")
-
-        // call super.stop()
-        sp <- superReference()
-        stopFunc <- getMember(sp, stopFuncName)
-        result <- apply(stopFunc, Seq.empty)
-
-      } yield Some(result)
-    }
-
-  def make_main_func(): Generator[paradigm.MethodBodyContext, Option[Expression]] = {
-      import paradigm.methodBodyCapabilities._
-      import ooParadigm.methodBodyCapabilities._
-      import impParadigm.imperativeCapabilities._
-      for {
-
-        // Make signature
-        _ <- setStatic()
-        arrayType <- toTargetLanguageType(TypeRep.Array(TypeRep.String))
-        _ <- resolveAndAddImport(arrayType)
-        unitType <- toTargetLanguageType(TypeRep.Unit)
-        _ <- setReturnType(unitType)
-        _ <- setParameters(Seq((names.mangle("args"), arrayType)))
-        // --------------
-
-        //selfRef <- selfReference()
-//        launchRef <- getMember(selfRef, )
-//        result <- apply(selfRef, Seq.empty)
-
-      } yield None
-    }
   def make_class(clazzName: String): Generator[ProjectContext, Unit] = {
     import ooParadigm.projectCapabilities._
     val makeClass: Generator[ClassContext, Unit] = {
       import classCapabilities._
-      val javafx_app_import = Seq(
-        names.mangle("javafx"),
-        names.mangle("application"),
-        names.mangle("Application")
-      )
-//      val starImport = Seq(
-//        names.mangle("javafx"),
-//        names.mangle("application"),
-//        names.mangle("*")
-//      )
-//      val myImportAST = new ImportDeclaration(
-//        "java.util.*",
-//        false,
-//        true
-//      )
-//      val myImport = new Import(
-//
-//      )
+
       for {
-        pt <- findClass(javafx_app_import : _ *)
-        //starPT <- findClass(starImport: _ *)
-        //_ <- addImport(starPT)
-        _ <- resolveAndAddImport(pt)
-        _ <- addParent(pt)
-        _ <- addMethod(initFuncName, make_init())
-        _ <- addMethod(startFuncName, make_start_func())
-        _ <- addMethod(stopFuncName, make_stop_func())
-        _ <- addMethod(mainFuncName, make_main_func())
+        _ <- addMethod(names.mangle("main"), make_main_func())
       } yield ()
     }
 
@@ -330,14 +127,14 @@ trait JavaFXApplicationProvider extends BaseProvider {
 
   def implement(): Generator[paradigm.ProjectContext, Unit] = {
     for {
-      _ <- make_class("JavaFXBasicApplication")
+      _ <- make_class("OpenGLApplication")
     } yield ()
   }
 
 }
 
-object JavaFXApplicationProvider {
-  type WithParadigm[P <: AnyParadigm] = JavaFXApplicationProvider { val paradigm: P }
+object OpenGLApplicationProvider {
+  type WithParadigm[P <: AnyParadigm] = OpenGLApplicationProvider { val paradigm: P }
   type WithSyntax[S <: AbstractSyntax] = WithParadigm[AnyParadigm.WithSyntax[S]]
 
   def apply[S <: AbstractSyntax, P <: AnyParadigm.WithSyntax[S]]
@@ -354,8 +151,8 @@ object JavaFXApplicationProvider {
    ffiassert: Assertions.WithBase[base.MethodBodyContext, base.type],
    ffiequal: Equality.WithBase[base.MethodBodyContext, base.type]
   )
-  : JavaFXApplicationProvider.WithParadigm[base.type] =
-    new JavaFXApplicationProvider {
+  : OpenGLApplicationProvider.WithParadigm[base.type] =
+    new OpenGLApplicationProvider {
       override val paradigm: base.type = base
       val impParadigm: imp.type = imp
       //val impConstructorParadigm: impConstructor.type = impConstructor

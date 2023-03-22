@@ -1,4 +1,4 @@
-package org.combinators.gui.providers.mesh_rendering.vulkan
+package org.combinators.rendering.providers.opengl
 
 /* Generates Fibonacci Program. */
 
@@ -14,18 +14,18 @@ import java.nio.file.{Path, Paths}
 /**
  * Takes paradigm-independent specification for Fibonacci and generates Java code
  */
-class VulkanApplicationMain {
+class OpenGLApplicationMain {
 
   val generator = CodeGenerator(
     CodeGenerator.defaultConfig.copy(
       boxLevel = PartiallyBoxed,
       targetPackage = new PackageDeclaration(
-        ObjectOriented.fromComponents("vulkan_application")
+        ObjectOriented.fromComponents("opengl_application")
       )
     )
   )
 
-  val appApproach = VulkanApplicationProvider[
+  val appApproach = OpenGLApplicationProvider[
     Syntax.default.type,
     generator.paradigm.type
   ](
@@ -93,12 +93,12 @@ class VulkanApplicationMain {
 }
 
 object BasicApplicationDirectToDiskMain extends IOApp {
-  val targetDirectory = Paths.get("target", "vulkan_application", "java")
+  val targetDirectory = Paths.get("target", "opengl_application", "java")
 
   def run(args: List[String]): IO[ExitCode] = {
     for {
       _ <- IO { print("Initializing Generator...") }
-      main <- IO { new VulkanApplicationMain() }
+      main <- IO { new OpenGLApplicationMain() }
       _ <- IO { println("[OK]") }
       result <- main.runDirectToDisc(targetDirectory)
     } yield result

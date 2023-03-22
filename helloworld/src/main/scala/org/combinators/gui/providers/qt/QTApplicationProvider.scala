@@ -1,7 +1,6 @@
-package org.combinators.gui.providers.mesh_rendering.opengl
+package org.combinators.gui.providers.qt
 
-import com.github.javaparser.ast.ImportDeclaration
-import org.combinators.common._
+import org.combinators.common.BaseProvider
 import org.combinators.ep.domain.abstractions.{DataType, DataTypeCase, TypeRep}
 import org.combinators.ep.generator.Command.{Generator, lift}
 import org.combinators.ep.generator.paradigm.ObjectOriented
@@ -11,9 +10,10 @@ import org.combinators.ep.generator.paradigm.ffi.{Arithmetic, Arrays, Assertions
 import org.combinators.ep.generator.paradigm.{AnyParadigm, FindClass, ObjectOriented}
 
 
-trait OpenGLApplicationProvider extends BaseProvider {
+trait QTApplicationProvider extends BaseProvider {
   val ooParadigm: ObjectOriented.WithBase[paradigm.type]
   val impParadigm: Imperative.WithBase[paradigm.MethodBodyContext,paradigm.type]
+  //val impConstructorParadigm: Imperative.WithBase[ooParadigm.ConstructorContext, paradigm.type]
   val names: NameProvider[paradigm.syntax.Name]
   val ffiArithmetic: Arithmetic.WithBase[paradigm.MethodBodyContext, paradigm.type, Int]
   val ffiAssertions : Assertions.WithBase[paradigm.MethodBodyContext, paradigm.type]
@@ -32,7 +32,6 @@ trait OpenGLApplicationProvider extends BaseProvider {
   lazy val stopFuncName = names.mangle("stop")
   lazy val mainFuncName = names.mangle("main")
   lazy val testWindowName = names.mangle("windowTest")
-
 
   /**
    * Default registration for findClass, which works with each registerTypeMapping for the different approaches.
@@ -79,31 +78,93 @@ trait OpenGLApplicationProvider extends BaseProvider {
     } yield res
   }
 
+  def make_close_event(): Generator[paradigm.MethodBodyContext, Option[paradigm.syntax.Expression]] = {
+      import paradigm.methodBodyCapabilities._
+      import ooParadigm.methodBodyCapabilities._
+      import impParadigm.imperativeCapabilities._
+      for {
+
+        unitType <- toTargetLanguageType(TypeRep.Unit)
+
+        // Make signature
+        _ <- paradigm.methodBodyCapabilities.setReturnType(unitType)
+        qEventType <- findClass(names.mangle("QCloseEvent"))
+        _ <- resolveAndAddImport(qEventType)
+        _ <- setParameters(Seq((names.mangle("event"), qEventType)))
+        //----
+
+        args <- getArguments()
+        (name, tpe, event) = args.head
+
+        _ <- make_method_call(
+          event,
+          "accept",
+          Seq.empty
+        )
+
+      } yield None
+    }
+
   def make_main_func(): Generator[paradigm.MethodBodyContext, Option[Expression]] = {
-    import paradigm.methodBodyCapabilities._
-    import ooParadigm.methodBodyCapabilities._
-    import impParadigm.imperativeCapabilities._
-    for {
+      import paradigm.methodBodyCapabilities._
+      import ooParadigm.methodBodyCapabilities._
+      import impParadigm.imperativeCapabilities._
+      for {
 
-      // Make signature
-      _ <- setStatic()
-      arrayType <- toTargetLanguageType(TypeRep.Array(TypeRep.String))
-      _ <- resolveAndAddImport(arrayType)
-      unitType <- toTargetLanguageType(TypeRep.Unit)
-      _ <- setReturnType(unitType)
-      _ <- setParameters(Seq((names.mangle("args"), arrayType)))
-      // --------------
+        // Make signature
+        _ <- setStatic()
+        arrayType <- toTargetLanguageType(TypeRep.Array(TypeRep.String))
+        _ <- resolveAndAddImport(arrayType)
+        unitType <- toTargetLanguageType(TypeRep.Unit)
+        _ <- setReturnType(unitType)
+        _ <- setParameters(Seq((names.mangle("args"), arrayType)))
+        // --------------
 
-    } yield None
-  }
+      } yield None
+    }
 
+//  def make_constructor(): Generator[ConstructorContext, Unit] = {
+//    import ooParadigm.constructorCapabilities.reify
+//
+//    for {
+//
+//      labelObj <- make_class_instantiation_in_constructor(
+//          "QLabel",
+//          "label",
+//          Seq.empty
+//      )
+//
+//      title <- ooParadigm.constructorCapabilities.reify(
+//        TypeRep.String,
+//        "Hello, World"
+//      )
+////      _ <- make_method_call(
+////        labelObj,
+////        "setText",
+////        Seq(title)
+////      )
+//
+//    } yield()
+//
+//
+//  }
 
   def make_class(clazzName: String): Generator[ProjectContext, Unit] = {
     import ooParadigm.projectCapabilities._
     val makeClass: Generator[ClassContext, Unit] = {
       import classCapabilities._
-
+      val app_import = Seq(
+        names.mangle("io"),
+        names.mangle("qt"),
+        names.mangle("core"),
+        names.mangle("QMainWindow"),
+      )
       for {
+        pt <- findClass(app_import : _ *)
+        _ <- resolveAndAddImport(pt)
+        _ <- addParent(pt)
+        //_ <- addConstructor(make_constructor())
+        _ <- addMethod(names.mangle("closeEvent"), make_close_event())
         _ <- addMethod(names.mangle("main"), make_main_func())
       } yield ()
     }
@@ -127,22 +188,22 @@ trait OpenGLApplicationProvider extends BaseProvider {
 
   def implement(): Generator[paradigm.ProjectContext, Unit] = {
     for {
-      _ <- make_class("OpenGLApplication")
+      _ <- make_class("QTBasicApplication")
     } yield ()
   }
 
 }
 
-object OpenGLApplicationProvider {
-  type WithParadigm[P <: AnyParadigm] = OpenGLApplicationProvider { val paradigm: P }
+object QTApplicationProvider {
+  type WithParadigm[P <: AnyParadigm] = QTApplicationProvider { val paradigm: P }
   type WithSyntax[S <: AbstractSyntax] = WithParadigm[AnyParadigm.WithSyntax[S]]
 
   def apply[S <: AbstractSyntax, P <: AnyParadigm.WithSyntax[S]]
   (base: P)
   (nameProvider: NameProvider[base.syntax.Name],
    imp: Imperative.WithBase[base.MethodBodyContext, base.type],
-   //impConstructor: Imperative.WithBase[ObjectOriented.WithBase[base.type], base.type],
    oo: ObjectOriented.WithBase[base.type],
+   //impConstructor: Imperative.WithBase[base., base.type],
    con: Console.WithBase[base.MethodBodyContext, base.type],
    arr: Arrays.WithBase[base.MethodBodyContext, base.type],
    assertsIn: Assertions.WithBase[base.MethodBodyContext, base.type],
@@ -151,8 +212,8 @@ object OpenGLApplicationProvider {
    ffiassert: Assertions.WithBase[base.MethodBodyContext, base.type],
    ffiequal: Equality.WithBase[base.MethodBodyContext, base.type]
   )
-  : OpenGLApplicationProvider.WithParadigm[base.type] =
-    new OpenGLApplicationProvider {
+  : QTApplicationProvider.WithParadigm[base.type] =
+    new QTApplicationProvider {
       override val paradigm: base.type = base
       val impParadigm: imp.type = imp
       //val impConstructorParadigm: impConstructor.type = impConstructor

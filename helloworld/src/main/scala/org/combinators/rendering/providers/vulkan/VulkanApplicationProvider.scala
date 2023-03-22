@@ -1,4 +1,4 @@
-package org.combinators.gui.providers.basic_application.libgdx
+package org.combinators.rendering.providers.vulkan
 
 import com.github.javaparser.ast.ImportDeclaration
 import org.combinators.common._
@@ -11,7 +11,7 @@ import org.combinators.ep.generator.paradigm.ffi.{Arithmetic, Arrays, Assertions
 import org.combinators.ep.generator.paradigm.{AnyParadigm, FindClass, ObjectOriented}
 
 
-trait LibGDXApplicationProvider extends BaseProvider {
+trait VulkanApplicationProvider extends BaseProvider {
   val ooParadigm: ObjectOriented.WithBase[paradigm.type]
   val impParadigm: Imperative.WithBase[paradigm.MethodBodyContext,paradigm.type]
   val names: NameProvider[paradigm.syntax.Name]
@@ -79,85 +79,6 @@ trait LibGDXApplicationProvider extends BaseProvider {
     } yield res
   }
 
-  def make_dispose_func(): Generator[paradigm.MethodBodyContext, Option[Expression]] = {
-    import paradigm.methodBodyCapabilities._
-    import ooParadigm.methodBodyCapabilities._
-    import impParadigm.imperativeCapabilities._
-    for {
-
-      unitType <- toTargetLanguageType(TypeRep.Unit)
-      _ <- setReturnType(unitType)
-
-      selfRef <- selfReference()
-      batchObj <- getMember(selfRef, names.mangle("batch"))
-      _ <- make_method_call(batchObj, "dispose", Seq.empty)
-
-    } yield None
-  }
-
-  def make_create_func(): Generator[paradigm.MethodBodyContext, Option[paradigm.syntax.Expression]] = {
-    import paradigm.methodBodyCapabilities._
-    import ooParadigm.methodBodyCapabilities._
-    import impParadigm.imperativeCapabilities._
-
-    for {
-
-      unitType <- toTargetLanguageType(TypeRep.Unit)
-      _ <- setReturnType(unitType)
-
-      _ <- make_field_class_assignment("SpriteBatch", "batch", Seq.empty)
-      _ <- make_field_class_assignment("BitmapFont", "font", Seq.empty)
-      _ <- make_field_class_assignment("OrthographicCamera", "camera", Seq.empty)
-
-    } yield None
-  }
-
-  def make_render_func(): Generator[paradigm.MethodBodyContext, Option[Expression]] = {
-    import paradigm.methodBodyCapabilities._
-    import ooParadigm.methodBodyCapabilities._
-    import impParadigm.imperativeCapabilities._
-    for {
-      unitType <- toTargetLanguageType(TypeRep.Unit)
-      _ <- setReturnType(unitType)
-
-      selfRef <- selfReference()
-
-//      cameraObj <- getMember(selfRef, names.mangle("camera"))
-//      setToOrthoFunc <- getMember(cameraObj, names.mangle("setToOrthoFunc"))
-//
-//      gdxClass <- findClass(names.mangle("Gdx"))
-//      graphics <- getMember(gdxClass, names.mangle("graphics"))
-//
-//
-//      _ <- apply(setToOrthoFunc, Seq(
-//        falseExpr,
-//
-//      ))
-
-//      camera.setToOrtho(
-//        false,
-//        Gdx.graphics.getWidth(),
-//        Gdx.graphics.getHeight()
-//      );
-//
-//      ScreenUtils.clear(0, 0, 0, 0);
-//      camera.update();
-//      batch.setProjectionMatrix(camera.combined);
-//
-//      batch.begin();
-//
-//      font.draw(
-//        batch,
-//        "Hello World!",
-//        Gdx.graphics.getWidth() / 2,
-//        Gdx.graphics.getHeight() / 2
-//      );
-//
-//      batch.end();
-
-    } yield None
-  }
-
   def make_main_func(): Generator[paradigm.MethodBodyContext, Option[Expression]] = {
     import paradigm.methodBodyCapabilities._
     import ooParadigm.methodBodyCapabilities._
@@ -173,94 +94,17 @@ trait LibGDXApplicationProvider extends BaseProvider {
       _ <- setParameters(Seq((names.mangle("args"), arrayType)))
       // --------------
 
-      fps <- paradigm.methodBodyCapabilities.reify(
-        TypeRep.Int,
-        60
-      )
-
-      title <- paradigm.methodBodyCapabilities.reify(
-        TypeRep.String,
-        "GDX Window"
-      )
-
-      configObj <- make_class_instantiation(
-        "Lwjgl3ApplicationConfiguration",
-        "config",
-        Seq.empty
-      )
-
-      _ <- make_method_call(
-        configObj,
-        "setForegroundFPS",
-        Seq(fps)
-      )
-
-      _ <- make_method_call(
-        configObj,
-        "setTitle",
-        Seq(title)
-      )
-
-      trueExpr <- paradigm.methodBodyCapabilities.reify(
-        TypeRep.Boolean,
-        true
-      )
-
-
-      _ <- make_method_call(
-        configObj,
-        "useVsync",
-        Seq(trueExpr)
-      )
-
-      classType <- findClass(names.mangle("Lwjgl3Application"))
-      _ <- resolveAndAddImport(classType)
-      classObj <- instantiateObject(classType, Seq.empty)
-
-    } yield Some(classObj)
+    } yield None
   }
 
 
-  def make_application_class(clazzName: String): Generator[ProjectContext, Unit] = {
-    import ooParadigm.projectCapabilities._
-    val makeClass: Generator[ClassContext, Unit] = {
-      import classCapabilities._
-      val libgdx_import = Seq(
-        names.mangle("com"),
-        names.mangle("badlogic"),
-        names.mangle("gdx"),
-        names.mangle("ApplicationAdapter")
-      )
-
-      for {
-
-        spriteBatchClass <- findClass(names.mangle("SpriteBatch"))
-        bitmapFontClass <- findClass(names.mangle("BitmapFont"))
-        orthographicCameraClass <- findClass(names.mangle("OrthographicCamera"))
-
-        pt <- findClass(libgdx_import : _ *)
-
-        _ <- resolveAndAddImport(pt)
-        _ <- addParent(pt)
-        _ <- addField(names.mangle("batch"), spriteBatchClass)
-        _ <- addField(names.mangle("font"), bitmapFontClass)
-        _ <- addField(names.mangle("camera"), orthographicCameraClass)
-        _ <- addMethod(names.mangle("create"), make_create_func())
-        _ <- addMethod(names.mangle("dispose"), make_dispose_func())
-        _ <- addMethod(names.mangle("render"), make_render_func())
-      } yield ()
-    }
-
-    addClassToProject(makeClass, names.mangle(clazzName))
-  }
-
-  def make_desktop_launcher_class(clazzName: String): Generator[ProjectContext, Unit] = {
+  def make_class(clazzName: String): Generator[ProjectContext, Unit] = {
     import ooParadigm.projectCapabilities._
     val makeClass: Generator[ClassContext, Unit] = {
       import classCapabilities._
 
       for {
-        _ <- addMethod(mainFuncName, make_main_func())
+        _ <- addMethod(names.mangle("main"), make_main_func())
       } yield ()
     }
 
@@ -283,15 +127,14 @@ trait LibGDXApplicationProvider extends BaseProvider {
 
   def implement(): Generator[paradigm.ProjectContext, Unit] = {
     for {
-      _ <- make_desktop_launcher_class("DesktopLauncher")
-      _ <- make_application_class("Application")
+      _ <- make_class("VulkanApplication")
     } yield ()
   }
 
 }
 
-object LibGDXApplicationProvider {
-  type WithParadigm[P <: AnyParadigm] = LibGDXApplicationProvider { val paradigm: P }
+object VulkanApplicationProvider {
+  type WithParadigm[P <: AnyParadigm] = VulkanApplicationProvider { val paradigm: P }
   type WithSyntax[S <: AbstractSyntax] = WithParadigm[AnyParadigm.WithSyntax[S]]
 
   def apply[S <: AbstractSyntax, P <: AnyParadigm.WithSyntax[S]]
@@ -308,8 +151,8 @@ object LibGDXApplicationProvider {
    ffiassert: Assertions.WithBase[base.MethodBodyContext, base.type],
    ffiequal: Equality.WithBase[base.MethodBodyContext, base.type]
   )
-  : LibGDXApplicationProvider.WithParadigm[base.type] =
-    new LibGDXApplicationProvider {
+  : VulkanApplicationProvider.WithParadigm[base.type] =
+    new VulkanApplicationProvider {
       override val paradigm: base.type = base
       val impParadigm: imp.type = imp
       //val impConstructorParadigm: impConstructor.type = impConstructor

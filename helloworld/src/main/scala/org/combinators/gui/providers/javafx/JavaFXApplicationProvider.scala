@@ -1,6 +1,7 @@
-package org.combinators.gui.providers.basic_application.qt
+package org.combinators.gui.providers.javafx
 
-import org.combinators.common.BaseProvider
+import com.github.javaparser.ast.ImportDeclaration
+import org.combinators.common._
 import org.combinators.ep.domain.abstractions.{DataType, DataTypeCase, TypeRep}
 import org.combinators.ep.generator.Command.{Generator, lift}
 import org.combinators.ep.generator.paradigm.ObjectOriented
@@ -10,7 +11,7 @@ import org.combinators.ep.generator.paradigm.ffi.{Arithmetic, Arrays, Assertions
 import org.combinators.ep.generator.paradigm.{AnyParadigm, FindClass, ObjectOriented}
 
 
-trait QTApplicationProvider extends BaseProvider {
+trait JavaFXApplicationProvider extends BaseProvider {
   val ooParadigm: ObjectOriented.WithBase[paradigm.type]
   val impParadigm: Imperative.WithBase[paradigm.MethodBodyContext,paradigm.type]
   //val impConstructorParadigm: Imperative.WithBase[ooParadigm.ConstructorContext, paradigm.type]
@@ -78,31 +79,109 @@ trait QTApplicationProvider extends BaseProvider {
     } yield res
   }
 
-  def make_close_event(): Generator[paradigm.MethodBodyContext, Option[paradigm.syntax.Expression]] = {
+  def make_init(): Generator[paradigm.MethodBodyContext, Option[Expression]] = {
+    import paradigm.methodBodyCapabilities._
+    import ooParadigm.methodBodyCapabilities._
+    import impParadigm.imperativeCapabilities._
+    for {
+      _ <- print_message("Inside init() method! Perform necessary initializations here.")
+
+      unitType <- toTargetLanguageType(TypeRep.Unit)
+      _ <- paradigm.methodBodyCapabilities.setReturnType(unitType)
+
+      sp <- superReference()
+      init <- getMember(sp, initFuncName)
+      result <- apply(init, Seq.empty)
+
+      stmt <- liftExpression(result)
+      _ <- addBlockDefinitions(Seq(stmt))
+
+    } yield None
+  }
+
+
+
+  def make_start_func(): Generator[paradigm.MethodBodyContext, Option[paradigm.syntax.Expression]] = {
+      import paradigm.methodBodyCapabilities._
+      import ooParadigm.methodBodyCapabilities._
+      import impParadigm.imperativeCapabilities._
+
+      for {
+
+        unitType <- toTargetLanguageType(TypeRep.Unit)
+        intType <- toTargetLanguageType(TypeRep.Int)
+
+        // Make signature
+        _ <- paradigm.methodBodyCapabilities.setReturnType(unitType)
+        stageType <- findClass(names.mangle("Stage"))
+        _ <- resolveAndAddImport(stageType)
+        _ <- setParameters(Seq((names.mangle("primaryStage"), stageType)))
+        //----
+
+        args <- getArguments()
+        (name, tpe, primaryStage) = args.head
+
+        msg <- paradigm.methodBodyCapabilities.reify(
+          TypeRep.String,
+          "Hello World"
+        )
+
+        labelObj <- make_class_instantiation(
+          "Label",
+          "label",
+          Seq(msg)
+        )
+
+        sceneObj <- make_class_instantiation(
+          "Scene",
+          "scene",
+          Seq(labelObj)
+        )
+
+        title <- paradigm.methodBodyCapabilities.reify(
+          TypeRep.String,
+          "Hello World Application"
+        )
+
+        _ <- make_method_call(
+          primaryStage,
+          "setTitle",
+          Seq(title)
+        )
+
+        _ <- make_method_call(
+          primaryStage,
+          "setScene",
+          Seq(sceneObj)
+        )
+
+        _ <- make_method_call(
+          primaryStage,
+            "setAlignment",
+          Seq.empty
+          )
+
+      } yield None
+    }
+
+    def make_stop_func(): Generator[paradigm.MethodBodyContext, Option[Expression]] = {
       import paradigm.methodBodyCapabilities._
       import ooParadigm.methodBodyCapabilities._
       import impParadigm.imperativeCapabilities._
       for {
 
-        unitType <- toTargetLanguageType(TypeRep.Unit)
+        // Make signatures
+        intType <- toTargetLanguageType(TypeRep.Int)
+        _ <- paradigm.methodBodyCapabilities.setReturnType(intType)
 
-        // Make signature
-        _ <- paradigm.methodBodyCapabilities.setReturnType(unitType)
-        qEventType <- findClass(names.mangle("QCloseEvent"))
-        _ <- resolveAndAddImport(qEventType)
-        _ <- setParameters(Seq((names.mangle("event"), qEventType)))
-        //----
+        _ <- print_message("Inside stop() method! Destroy resources. Perform Cleanup.")
 
-        args <- getArguments()
-        (name, tpe, event) = args.head
+        // call super.stop()
+        sp <- superReference()
+        stopFunc <- getMember(sp, stopFuncName)
+        result <- apply(stopFunc, Seq.empty)
 
-        _ <- make_method_call(
-          event,
-          "accept",
-          Seq.empty
-        )
-
-      } yield None
+      } yield Some(result)
     }
 
   def make_main_func(): Generator[paradigm.MethodBodyContext, Option[Expression]] = {
@@ -120,52 +199,44 @@ trait QTApplicationProvider extends BaseProvider {
         _ <- setParameters(Seq((names.mangle("args"), arrayType)))
         // --------------
 
+        //selfRef <- selfReference()
+//        launchRef <- getMember(selfRef, )
+//        result <- apply(selfRef, Seq.empty)
+
       } yield None
     }
-
-//  def make_constructor(): Generator[ConstructorContext, Unit] = {
-//    import ooParadigm.constructorCapabilities.reify
-//
-//    for {
-//
-//      labelObj <- make_class_instantiation_in_constructor(
-//          "QLabel",
-//          "label",
-//          Seq.empty
-//      )
-//
-//      title <- ooParadigm.constructorCapabilities.reify(
-//        TypeRep.String,
-//        "Hello, World"
-//      )
-////      _ <- make_method_call(
-////        labelObj,
-////        "setText",
-////        Seq(title)
-////      )
-//
-//    } yield()
-//
-//
-//  }
-
   def make_class(clazzName: String): Generator[ProjectContext, Unit] = {
     import ooParadigm.projectCapabilities._
     val makeClass: Generator[ClassContext, Unit] = {
       import classCapabilities._
-      val app_import = Seq(
-        names.mangle("io"),
-        names.mangle("qt"),
-        names.mangle("core"),
-        names.mangle("QMainWindow"),
+      val javafx_app_import = Seq(
+        names.mangle("javafx"),
+        names.mangle("application"),
+        names.mangle("Application")
       )
+//      val starImport = Seq(
+//        names.mangle("javafx"),
+//        names.mangle("application"),
+//        names.mangle("*")
+//      )
+//      val myImportAST = new ImportDeclaration(
+//        "java.util.*",
+//        false,
+//        true
+//      )
+//      val myImport = new Import(
+//
+//      )
       for {
-        pt <- findClass(app_import : _ *)
+        pt <- findClass(javafx_app_import : _ *)
+        //starPT <- findClass(starImport: _ *)
+        //_ <- addImport(starPT)
         _ <- resolveAndAddImport(pt)
         _ <- addParent(pt)
-        //_ <- addConstructor(make_constructor())
-        _ <- addMethod(names.mangle("closeEvent"), make_close_event())
-        _ <- addMethod(names.mangle("main"), make_main_func())
+        _ <- addMethod(initFuncName, make_init())
+        _ <- addMethod(startFuncName, make_start_func())
+        _ <- addMethod(stopFuncName, make_stop_func())
+        _ <- addMethod(mainFuncName, make_main_func())
       } yield ()
     }
 
@@ -188,22 +259,22 @@ trait QTApplicationProvider extends BaseProvider {
 
   def implement(): Generator[paradigm.ProjectContext, Unit] = {
     for {
-      _ <- make_class("QTBasicApplication")
+      _ <- make_class("JavaFXBasicApplication")
     } yield ()
   }
 
 }
 
-object QTApplicationProvider {
-  type WithParadigm[P <: AnyParadigm] = QTApplicationProvider { val paradigm: P }
+object JavaFXApplicationProvider {
+  type WithParadigm[P <: AnyParadigm] = JavaFXApplicationProvider { val paradigm: P }
   type WithSyntax[S <: AbstractSyntax] = WithParadigm[AnyParadigm.WithSyntax[S]]
 
   def apply[S <: AbstractSyntax, P <: AnyParadigm.WithSyntax[S]]
   (base: P)
   (nameProvider: NameProvider[base.syntax.Name],
    imp: Imperative.WithBase[base.MethodBodyContext, base.type],
+   //impConstructor: Imperative.WithBase[ObjectOriented.WithBase[base.type], base.type],
    oo: ObjectOriented.WithBase[base.type],
-   //impConstructor: Imperative.WithBase[base., base.type],
    con: Console.WithBase[base.MethodBodyContext, base.type],
    arr: Arrays.WithBase[base.MethodBodyContext, base.type],
    assertsIn: Assertions.WithBase[base.MethodBodyContext, base.type],
@@ -212,8 +283,8 @@ object QTApplicationProvider {
    ffiassert: Assertions.WithBase[base.MethodBodyContext, base.type],
    ffiequal: Equality.WithBase[base.MethodBodyContext, base.type]
   )
-  : QTApplicationProvider.WithParadigm[base.type] =
-    new QTApplicationProvider {
+  : JavaFXApplicationProvider.WithParadigm[base.type] =
+    new JavaFXApplicationProvider {
       override val paradigm: base.type = base
       val impParadigm: imp.type = imp
       //val impConstructorParadigm: impConstructor.type = impConstructor

@@ -42,6 +42,39 @@ trait BaseProvider {
 
   }
 
+  def make_class_instantiation_floating(
+                                typeName: String,
+                                constructorParams: Seq[Expression],
+                                addInline: Boolean
+                              ): Generator[MethodBodyContext, paradigm.syntax.Expression] = {
+    import impParadigm.imperativeCapabilities._
+    import ooParadigm.methodBodyCapabilities._
+    import paradigm.methodBodyCapabilities._
+
+    val myFunc: Expression => Generator[MethodBodyContext, paradigm.syntax.Expression] = {
+      (stmt) => {
+        if (addInline) {
+          for {
+            liftedStmt <- liftExpression(stmt)
+            _ <- addBlockDefinitions(Seq(liftedStmt))
+          } yield stmt
+        } else {
+          for {
+            liftedStmt <- liftExpression(stmt)
+          } yield stmt
+        }
+      }
+    }
+
+    for {
+      classType <- findClass(names.mangle(typeName))
+      stmt <- instantiateObject(classType, constructorParams)
+      _ <- myFunc(stmt)
+    } yield stmt
+
+  }
+
+
   def make_class_instantiation(
                            typeName: String,
                            varName: String,

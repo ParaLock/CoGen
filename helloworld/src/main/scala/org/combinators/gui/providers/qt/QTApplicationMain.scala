@@ -1,4 +1,4 @@
-package org.combinators.gui.providers.mesh_rendering.opengl
+package org.combinators.gui.providers.qt
 
 /* Generates Fibonacci Program. */
 
@@ -14,18 +14,18 @@ import java.nio.file.{Path, Paths}
 /**
  * Takes paradigm-independent specification for Fibonacci and generates Java code
  */
-class OpenGLApplicationMain {
+class QTApplicationMain {
 
   val generator = CodeGenerator(
     CodeGenerator.defaultConfig.copy(
       boxLevel = PartiallyBoxed,
       targetPackage = new PackageDeclaration(
-        ObjectOriented.fromComponents("opengl_application")
+        ObjectOriented.fromComponents("qt_application")
       )
     )
   )
 
-  val appApproach = OpenGLApplicationProvider[
+  val appApproach = QTApplicationProvider[
     Syntax.default.type,
     generator.paradigm.type
   ](
@@ -93,12 +93,12 @@ class OpenGLApplicationMain {
 }
 
 object BasicApplicationDirectToDiskMain extends IOApp {
-  val targetDirectory = Paths.get("target", "opengl_application", "java")
+  val targetDirectory = Paths.get("target", "qt_basic_application", "java")
 
   def run(args: List[String]): IO[ExitCode] = {
     for {
       _ <- IO { print("Initializing Generator...") }
-      main <- IO { new OpenGLApplicationMain() }
+      main <- IO { new QTApplicationMain() }
       _ <- IO { println("[OK]") }
       result <- main.runDirectToDisc(targetDirectory)
     } yield result

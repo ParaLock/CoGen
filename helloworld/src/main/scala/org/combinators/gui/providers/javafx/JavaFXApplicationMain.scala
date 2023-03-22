@@ -1,4 +1,4 @@
-package org.combinators.gui.providers.basic_application.libgdx
+package org.combinators.gui.providers.javafx
 
 /* Generates Fibonacci Program. */
 
@@ -14,18 +14,18 @@ import java.nio.file.{Path, Paths}
 /**
  * Takes paradigm-independent specification for Fibonacci and generates Java code
  */
-class LibGDXApplicationMain {
+class JavaFXApplicationMain {
 
   val generator = CodeGenerator(
     CodeGenerator.defaultConfig.copy(
       boxLevel = PartiallyBoxed,
       targetPackage = new PackageDeclaration(
-        ObjectOriented.fromComponents("libgdx_basic_application")
+        ObjectOriented.fromComponents("javafx_basic_application")
       )
     )
   )
 
-  val appApproach = LibGDXApplicationProvider[
+  val appApproach = JavaFXApplicationProvider[
     Syntax.default.type,
     generator.paradigm.type
   ](
@@ -93,12 +93,12 @@ class LibGDXApplicationMain {
 }
 
 object BasicApplicationDirectToDiskMain extends IOApp {
-  val targetDirectory = Paths.get("target", "libgdx_basic_application", "java")
+  val targetDirectory = Paths.get("target", "javafx_basic_application", "java")
 
   def run(args: List[String]): IO[ExitCode] = {
     for {
       _ <- IO { print("Initializing Generator...") }
-      main <- IO { new LibGDXApplicationMain() }
+      main <- IO { new JavaFXApplicationMain() }
       _ <- IO { println("[OK]") }
       result <- main.runDirectToDisc(targetDirectory)
     } yield result

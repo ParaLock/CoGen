@@ -20,7 +20,7 @@ class ROSApplicationMain {
     CodeGenerator.defaultConfig.copy(
       boxLevel = PartiallyBoxed,
       targetPackage = new PackageDeclaration(
-        ObjectOriented.fromComponents("opengl_basic_application")
+        ObjectOriented.fromComponents("ros_application")
       )
     )
   )
