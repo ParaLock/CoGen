@@ -93,7 +93,7 @@ class LibGDXApplicationMain {
 }
 
 object BasicApplicationDirectToDiskMain extends IOApp {
-  val targetDirectory = Paths.get("target", "libgdx_basic_application", "java")
+  val targetDirectory = Paths.get("target", "libgdx_application", "java")
 
   def run(args: List[String]): IO[ExitCode] = {
     for {

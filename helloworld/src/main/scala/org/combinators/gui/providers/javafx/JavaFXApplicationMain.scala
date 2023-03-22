@@ -93,7 +93,7 @@ class JavaFXApplicationMain {
 }
 
 object BasicApplicationDirectToDiskMain extends IOApp {
-  val targetDirectory = Paths.get("target", "javafx_basic_application", "java")
+  val targetDirectory = Paths.get("target", "javafx_application", "java")
 
   def run(args: List[String]): IO[ExitCode] = {
     for {
