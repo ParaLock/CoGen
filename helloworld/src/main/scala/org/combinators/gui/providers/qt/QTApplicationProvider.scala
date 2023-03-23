@@ -13,7 +13,7 @@ import org.combinators.ep.generator.paradigm.{AnyParadigm, FindClass, ObjectOrie
 trait QTApplicationProvider extends BaseProvider {
   val ooParadigm: ObjectOriented.WithBase[paradigm.type]
   val impParadigm: Imperative.WithBase[paradigm.MethodBodyContext,paradigm.type]
-  //val impConstructorParadigm: Imperative.WithBase[ooParadigm.ConstructorContext, paradigm.type]
+  val impConstructorParadigm: Imperative.WithBase[ooParadigm.ConstructorContext, paradigm.type]
   val names: NameProvider[paradigm.syntax.Name]
   val ffiArithmetic: Arithmetic.WithBase[paradigm.MethodBodyContext, paradigm.type, Int]
   val ffiAssertions : Assertions.WithBase[paradigm.MethodBodyContext, paradigm.type]
@@ -123,31 +123,31 @@ trait QTApplicationProvider extends BaseProvider {
       } yield None
     }
 
-//  def make_constructor(): Generator[ConstructorContext, Unit] = {
-//    import ooParadigm.constructorCapabilities.reify
+  def make_constructor(): Generator[ConstructorContext, Unit] = {
+    import ooParadigm.constructorCapabilities.reify
+    import impConstructorParadigm.imperativeCapabilities._
+
+    for {
+
+      title <- ooParadigm.constructorCapabilities.reify(
+        TypeRep.String,
+        "Hello, World"
+      )
+
+//      myVar <- declareVar(
 //
-//    for {
-//
-//      labelObj <- make_class_instantiation_in_constructor(
-//          "QLabel",
-//          "label",
-//          Seq.empty
 //      )
-//
-//      title <- ooParadigm.constructorCapabilities.reify(
-//        TypeRep.String,
-//        "Hello, World"
+
+      //      _ <- make_method_call(
+//        labelObj,
+//        "setText",
+//        Seq(title)
 //      )
-////      _ <- make_method_call(
-////        labelObj,
-////        "setText",
-////        Seq(title)
-////      )
-//
-//    } yield()
-//
-//
-//  }
+
+    } yield()
+
+
+  }
 
   def make_class(clazzName: String): Generator[ProjectContext, Unit] = {
     import ooParadigm.projectCapabilities._
@@ -163,7 +163,7 @@ trait QTApplicationProvider extends BaseProvider {
         pt <- findClass(app_import : _ *)
         _ <- resolveAndAddImport(pt)
         _ <- addParent(pt)
-        //_ <- addConstructor(make_constructor())
+        _ <- addConstructor(make_constructor())
         _ <- addMethod(names.mangle("closeEvent"), make_close_event())
         _ <- addMethod(names.mangle("main"), make_main_func())
       } yield ()
@@ -203,7 +203,6 @@ object QTApplicationProvider {
   (nameProvider: NameProvider[base.syntax.Name],
    imp: Imperative.WithBase[base.MethodBodyContext, base.type],
    oo: ObjectOriented.WithBase[base.type],
-   //impConstructor: Imperative.WithBase[base., base.type],
    con: Console.WithBase[base.MethodBodyContext, base.type],
    arr: Arrays.WithBase[base.MethodBodyContext, base.type],
    assertsIn: Assertions.WithBase[base.MethodBodyContext, base.type],
@@ -212,13 +211,15 @@ object QTApplicationProvider {
    ffiassert: Assertions.WithBase[base.MethodBodyContext, base.type],
    ffiequal: Equality.WithBase[base.MethodBodyContext, base.type]
   )
+  (impConstructor: Imperative.WithBase[oo.ConstructorContext, base.type])
   : QTApplicationProvider.WithParadigm[base.type] =
     new QTApplicationProvider {
       override val paradigm: base.type = base
       val impParadigm: imp.type = imp
-      //val impConstructorParadigm: impConstructor.type = impConstructor
+      //override val impConstructorParadigm: impConstructor.type = impConstructor
       override val names: NameProvider[paradigm.syntax.Name] = nameProvider
-      override val ooParadigm: ObjectOriented.WithBase[paradigm.type] = oo
+      override val ooParadigm: oo.type = oo
+      override val impConstructorParadigm: Imperative.WithBase[ooParadigm.ConstructorContext, paradigm.type] = impConstructor
       override val console: Console.WithBase[base.MethodBodyContext, paradigm.type] = con
       override val array: Arrays.WithBase[base.MethodBodyContext, paradigm.type] = arr
       override val asserts: Assertions.WithBase[base.MethodBodyContext, paradigm.type] = assertsIn

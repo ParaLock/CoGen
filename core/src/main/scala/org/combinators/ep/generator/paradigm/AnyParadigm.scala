@@ -71,6 +71,11 @@ case class ResolveImport[Import, T](forElem: T) extends Command {
   type Result = Option[Import]
 }
 
+case class MakeRawImport[Import, Name](name: Seq[Name]) extends Command {
+  type Result = Import
+}
+
+
 case class DeclareVariable[Name, Type, Init, Res](name: Name, tpe: Type, initialization: Init) extends Command {
   type Result = Res
 }
@@ -180,6 +185,10 @@ trait AnyParadigm {
     implicit val canAddImportInMethodBody: Understands[MethodBodyContext, AddImport[Import]]
     def addImport(imp: Import): Generator[MethodBodyContext, Unit] =
       AnyParadigm.capability(AddImport(imp))
+
+    implicit val canMakeRawImportInMethodBody: Understands[MethodBodyContext, MakeRawImport[Import, Name]]
+    def makeRawImport(names: Name*): Generator[MethodBodyContext, Import] =
+      AnyParadigm.capability(MakeRawImport[Import, Name](names))
 
     implicit val canAddBlockDefinitionsInMethodBody: Understands[MethodBodyContext, AddBlockDefinitions[Statement]]
     def addBlockDefinitions(definitions: Seq[Statement]): Generator[MethodBodyContext, Unit] =

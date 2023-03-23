@@ -106,6 +106,7 @@ trait JavaFXApplicationProvider extends BaseProvider {
       import ooParadigm.methodBodyCapabilities._
       import impParadigm.imperativeCapabilities._
 
+
       for {
 
         unitType <- toTargetLanguageType(TypeRep.Unit)
@@ -155,11 +156,30 @@ trait JavaFXApplicationProvider extends BaseProvider {
           Seq(sceneObj)
         )
 
+        posClass <- findRawClass(
+          names.mangle("javafx"),
+          names.mangle("application"),
+          names.mangle("Pos")
+        )
+        imp <- makeRawImport(
+          names.mangle("javafx"),
+          names.mangle("application"),
+          names.mangle("Pos")
+        )
+
+        _ <- debug(posClass.toString)
+
+        _ <- addImport(imp)
+
+        posExpr <- toStaticTypeExpression(posClass)
+        posMember <- getMember(posExpr, names.mangle("CENTER"))
+
         _ <- make_method_call(
           primaryStage,
             "setAlignment",
-          Seq.empty
+          Seq(posMember)
           )
+
 
       } yield None
     }

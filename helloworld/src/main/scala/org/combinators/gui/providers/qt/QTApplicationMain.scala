@@ -41,7 +41,7 @@ class QTApplicationMain {
     generator.intsInMethod,
     generator.assertionsInMethod,
     generator.equalityInMethod
-  )
+  )(generator.imperativeInConstructor)
 
 
   val persistable = FileWithPathPersistable[FileWithPath]

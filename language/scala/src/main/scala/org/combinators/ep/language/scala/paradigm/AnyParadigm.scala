@@ -236,6 +236,8 @@ trait AnyParadigm extends AP {
           }
         }
 
+      implicit val canMakeRawImportInMethodBody: Understands[MethodBodyCtxt, MakeRawImport[Import, Name]] = ???
+
       implicit val canAddImportInMethodBody: Understands[MethodBodyCtxt, AddImport[Import]] =
         new Understands[MethodBodyCtxt, AddImport[Import]] {
           def perform(

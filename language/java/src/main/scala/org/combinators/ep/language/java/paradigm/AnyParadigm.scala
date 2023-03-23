@@ -209,6 +209,25 @@ trait AnyParadigm extends AP {
           }
         }
 
+      implicit val canMakeRawImportInMethodBody: Understands[MethodBodyCtxt, MakeRawImport[ImportDeclaration, Name]] =
+        new Understands[MethodBodyCtxt, MakeRawImport[ImportDeclaration, Name]] {
+          def perform(
+                       context: MethodBodyCtxt,
+                       command: MakeRawImport[ImportDeclaration, Name]
+                     ): (MethodBodyCtxt, ImportDeclaration) = {
+
+            val name = command.name.tail.foldLeft(new com.github.javaparser.ast.expr.Name(command.name.head.mangled)){
+              case (qualName,suffix) => new com.github.javaparser.ast.expr.Name(qualName, suffix.mangled)
+            }
+            val importExpr = new com.github.javaparser.ast.ImportDeclaration(
+              name,
+              false,
+              false
+            )
+            (context, importExpr)
+          }
+        }
+
       implicit val canAddBlockDefinitionsInMethodBody: Understands[MethodBodyCtxt, AddBlockDefinitions[Statement]] =
         new Understands[MethodBodyCtxt, AddBlockDefinitions[Statement]] {
           def perform(

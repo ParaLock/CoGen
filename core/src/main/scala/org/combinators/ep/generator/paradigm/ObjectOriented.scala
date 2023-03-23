@@ -63,6 +63,10 @@ case class GetMember[Expression, Name](instance: Expression, member: Name) exten
   type Result = Expression
 }
 
+case class ToStaticTypeExpression[Type, Expression](tpe: Type) extends Command {
+  type Result = Expression
+}
+
 case class SetAbstract() extends Command {
   type Result = Unit
 }
@@ -88,7 +92,7 @@ case class GetConstructor[Type, Expression](tpe: Type) extends Command {
   type Result = Expression
 }
 
-case class FindClass[Name, Type](qualifiedName: Seq[Name]) extends Command {
+case class FindClass[Name, Type](qualifiedName: Seq[Name], isRaw: Boolean = false) extends Command {
   type Result = Type
 }
 
@@ -280,6 +284,10 @@ trait ObjectOriented {
     def getMember(instance: Expression, member: Name): Generator[MethodBodyContext, Expression] =
       AnyParadigm.capability(GetMember(instance, member))
 
+    implicit val canToStaticTypeExpressionInMethod: Understands[MethodBodyContext, ToStaticTypeExpression[Type, Expression]]
+    def toStaticTypeExpression(tpe: Type): Generator[MethodBodyContext, Expression] =
+      AnyParadigm.capability[MethodBodyContext, Expression, ToStaticTypeExpression[Type, Expression]](ToStaticTypeExpression(tpe))
+
     implicit val canCastInMethod: Understands[MethodBodyContext, CastObject[Type, Expression]]
     def castObject(tpe:Type, expr: Expression): Generator[MethodBodyContext, Expression] =
       AnyParadigm.capability(CastObject(tpe, expr))
@@ -311,6 +319,10 @@ trait ObjectOriented {
     implicit val canFindClassInMethod: Understands[MethodBodyContext, FindClass[Name, Type]]
     def findClass(qualifiedName: Name*): Generator[MethodBodyContext, Type] =
       AnyParadigm.capability(FindClass[Name, Type](qualifiedName))
+
+    def findRawClass(qualifiedName: Name*): Generator[MethodBodyContext, Type] =
+      AnyParadigm.capability(FindClass[Name, Type](qualifiedName, true))
+
   }
   val methodBodyCapabilities: MethodBodyCapabilities
 

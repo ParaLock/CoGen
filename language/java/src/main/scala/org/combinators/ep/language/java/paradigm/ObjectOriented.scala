@@ -206,6 +206,8 @@ trait ObjectOriented[AP <: AnyParadigm] extends OO {
           }
         }
 
+
+
       implicit val canAddConstructorInClass: Understands[ClassContext, AddConstructor[ConstructorContext]] =
         new Understands[ClassContext, AddConstructor[ConstructorContext]] {
           def perform(
@@ -636,6 +638,17 @@ trait ObjectOriented[AP <: AnyParadigm] extends OO {
             (context, new FieldAccessExpr(command.instance.clone(), command.member.toAST.getIdentifier))
           }
         }
+
+      val canToStaticTypeExpressionInMethod: Understands[MethodBodyContext, ToStaticTypeExpression[Type, Expression]] =
+        new Understands[MethodBodyContext, ToStaticTypeExpression[Type, Expression]] {
+          def perform(
+                       context: MethodBodyContext,
+                       command: ToStaticTypeExpression[Type, Expression]
+                     ): (MethodBodyContext, Expression) = {
+            (context, new TypeExpr(command.tpe.clone()))
+          }
+        }
+
       val canSetAbstractInMethod: Understands[MethodBodyContext, SetAbstract] =
         new Understands[MethodBodyContext, SetAbstract] {
           def perform(
@@ -679,6 +692,10 @@ trait ObjectOriented[AP <: AnyParadigm] extends OO {
                        context: MethodBodyContext,
                        command: SuperReference[Name,Expression]
                      ): (MethodBodyContext, Expression) = {
+            if(command.qualifiedName.isEmpty) {
+              return (context, new com.github.javaparser.ast.expr.SuperExpr())
+            }
+
             val start = new ClassOrInterfaceType()
             val fullName = ObjectOriented.components(config.targetPackage.getName).map(JavaNameProvider.mangle) ++ command.qualifiedName
             start.setName(fullName.head.toAST)
@@ -706,8 +723,10 @@ trait ObjectOriented[AP <: AnyParadigm] extends OO {
             context: MethodBodyContext,
             command: FindClass[Name, Type]
           ): (MethodBodyContext, Type) = {
+
             val start = new ClassOrInterfaceType()
-            val fullName = ObjectOriented.components(config.targetPackage.getName).map(JavaNameProvider.mangle) ++ command.qualifiedName
+            val prefix = if(command.isRaw) Seq.empty else  ObjectOriented.components(config.targetPackage.getName).map(JavaNameProvider.mangle)
+            val fullName = prefix ++ command.qualifiedName
             start.setName(fullName.head.toAST)
             val qualifiedName = fullName.tail.foldLeft(start){ case (scopes, suffix) =>
               new ClassOrInterfaceType(scopes, suffix.mangled)}
