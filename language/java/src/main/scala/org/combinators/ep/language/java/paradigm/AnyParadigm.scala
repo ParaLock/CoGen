@@ -239,6 +239,10 @@ trait AnyParadigm extends AP {
               val stmts = command.definitions
               val nextMethod = oldMethod.clone()
               val body = nextMethod.getBody.orElseGet(() => new BlockStmt())
+              // if command.createNewBlock:
+              //   new block statement
+              //   add originals into new block statement
+              // body.addStatement(new statement)
               stmts.foreach(stmt => body.addStatement(stmt.clone()))
               nextMethod.setBody(body)
               nextMethod

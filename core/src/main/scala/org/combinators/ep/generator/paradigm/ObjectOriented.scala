@@ -150,12 +150,14 @@ trait ObjectOriented {
     def getField(name: Name): Generator[ClassContext, Expression] =
       AnyParadigm.capability(GetField[Name,Expression](name))
 
-    implicit val canAddMethodInClass: Understands[ClassContext, AddMethod[MethodBodyContext, Name, Option[Expression]]]
+    implicit val canAddMethodInClass: Understands[ClassContext, AddMethod[MethodBodyContext, Name, Option[Expression], Type]]
     def addMethod(
         name: Name,
         spec: Generator[MethodBodyContext, Option[Expression]],
-        isPublic: Boolean = true): Generator[ClassContext, Unit] =
-      AnyParadigm.capability(AddMethod(name, spec, isPublic))
+        isPublic: Boolean = true,
+        thrownExceptions: Seq[Type] = Seq.empty
+                 ): Generator[ClassContext, Unit] =
+      AnyParadigm.capability(AddMethod(name, spec, isPublic, thrownExceptions))
 
     def addAbstractMethod(name: Name, spec: Generator[MethodBodyContext, Unit], isPublic: Boolean = true): Generator[ClassContext, Unit] = {
       addMethod(name, spec.flatMap(_ => methodBodyCapabilities.setAbstract()).map(_ => None), isPublic)
@@ -196,6 +198,9 @@ trait ObjectOriented {
     implicit val canFindClassInClass: Understands[ClassContext, FindClass[Name, Type]]
     def findClass(qualifiedName: Name*): Generator[ClassContext, Type] =
       AnyParadigm.capability(FindClass[Name, Type](qualifiedName))
+
+    def findRawClass(qualifiedName: Name*): Generator[ClassContext, Type] =
+      AnyParadigm.capability(FindClass[Name, Type](qualifiedName, true))
 
     implicit val canGetFreshNameInClass: Understands[ClassContext, FreshName[Name]]
     def freshName(basedOn: Name): Generator[ClassContext, Name] =
@@ -345,12 +350,14 @@ trait ObjectOriented {
 
   trait TestCapabilities {
     // helper methods can be added to OO test cases
-    implicit val canAddMethodInTest: Understands[TestContext, AddMethod[MethodBodyContext, Name, Option[Expression]]]
+    implicit val canAddMethodInTest: Understands[TestContext, AddMethod[MethodBodyContext, Name, Option[Expression], Type]]
     def addMethod(
                    name: Name,
                    spec: Generator[MethodBodyContext, Option[Expression]],
-                   isPublic: Boolean = true): Generator[TestContext, Unit] =
-      AnyParadigm.capability(AddMethod(name, spec, isPublic))
+                   isPublic: Boolean = true,
+                   thrownExceptions: Seq[Type] = Seq.empty
+                 ): Generator[TestContext, Unit] =
+      AnyParadigm.capability(AddMethod(name, spec, isPublic, thrownExceptions))
 
     implicit val canAddBlockDefinitionsInTest: Understands[TestContext, AddBlockDefinitions[Statement]]
     def addBlockDefinitions(definitions: Seq[Statement]): Generator[TestContext, Unit] =

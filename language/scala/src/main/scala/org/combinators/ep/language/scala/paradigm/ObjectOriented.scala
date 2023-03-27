@@ -148,7 +148,7 @@ trait ObjectOriented[AP <: AnyParadigm] extends OO {
         }
       implicit val canAddFieldInClass: Understands[ClassCtxt, AddField[MangledName, Type, Expression]] = ???
       implicit val canGetFieldInClass: Understands[ClassCtxt, GetField[MangledName, Term]] = ???
-      implicit val canAddMethodInClass: Understands[ClassCtxt, AddMethod[MethodBodyCtxt, MangledName, Option[Term]]] = ???
+      implicit val canAddMethodInClass: Understands[ClassCtxt, AddMethod[MethodBodyCtxt, MangledName, Option[Term], Type]] = ???
       implicit val canAddConstructorInClass: Understands[ClassCtxt, AddConstructor[CtorCtxt]] = ???
       implicit val canAddImportInClass: Understands[ClassCtxt, AddImport[Import]] = ???
       implicit val canResolveImportInClass: Understands[ClassCtxt, ResolveImport[Import, Type]] = ???

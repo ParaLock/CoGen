@@ -3,6 +3,7 @@ package org.combinators.ep.language.java.paradigm    /*DI:LD:AI*/
 import java.util.UUID
 import com.github.javaparser.ast.{ImportDeclaration, Modifier, NodeList}
 import com.github.javaparser.ast.`type`.ClassOrInterfaceType
+import com.github.javaparser.ast.`type`.ReferenceType
 import com.github.javaparser.ast.body.{ClassOrInterfaceDeclaration, ConstructorDeclaration, MethodDeclaration}
 import com.github.javaparser.ast.expr.{AssignExpr, CastExpr, EnclosedExpr, Expression, FieldAccessExpr, InstanceOfExpr, MethodCallExpr, NameExpr, ObjectCreationExpr, ThisExpr, TypeExpr, Name => JName}
 import com.github.javaparser.ast.stmt.{BlockStmt, ExplicitConstructorInvocationStmt, ExpressionStmt, ReturnStmt}
@@ -179,15 +180,25 @@ trait ObjectOriented[AP <: AnyParadigm] extends OO {
           ): (ClassContext, Expression) =
             (context, new NameExpr(command.name.mangled))
         }
-      implicit val canAddMethodInClass: Understands[ClassContext, AddMethod[base.MethodBodyContext, Name, Option[Expression]]] =
-        new Understands[ClassContext, AddMethod[base.MethodBodyContext, Name, Option[Expression]]] {
+      implicit val canAddMethodInClass: Understands[ClassContext, AddMethod[base.MethodBodyContext, Name, Option[Expression], Type]] =
+        new Understands[ClassContext, AddMethod[base.MethodBodyContext, Name, Option[Expression], Type]] {
           def perform(
             context: ClassContext,
-            command: AddMethod[base.MethodBodyContext, Name, Option[Expression]]
+            command: AddMethod[base.MethodBodyContext, Name, Option[Expression], Type]
           ): (ClassContext, Unit) = {
             val methodToAdd = new MethodDeclaration()
             methodToAdd.setName(command.name.toAST)
             methodToAdd.setPublic(command.isPublic)
+
+            val exceptionsAsNodes = new NodeList[ReferenceType]()
+            for (item <- command.thrownExceptions) {
+              exceptionsAsNodes.add(item.asInstanceOf[ReferenceType])
+            }
+
+            if(exceptionsAsNodes.size > 0) {
+              methodToAdd.setThrownExceptions(exceptionsAsNodes)
+            }
+
             val (methodCtxt, returnExp) =
               Command.runGenerator(
                 command.spec,
@@ -771,11 +782,11 @@ trait ObjectOriented[AP <: AnyParadigm] extends OO {
     }
   val testCapabilities: TestCapabilities =
     new TestCapabilities {
-      implicit val canAddMethodInTest: Understands[TestCtxt, AddMethod[base.MethodBodyContext, Name, Option[Expression]]] =
-        new Understands[TestCtxt, AddMethod[base.MethodBodyContext, Name, Option[Expression]]] {
+      implicit val canAddMethodInTest: Understands[TestCtxt, AddMethod[base.MethodBodyContext, Name, Option[Expression], Type]] =
+        new Understands[TestCtxt, AddMethod[base.MethodBodyContext, Name, Option[Expression], Type]] {
           def perform(
             context: TestCtxt,
-            command: AddMethod[base.MethodBodyContext, Name, Option[Expression]]
+            command: AddMethod[base.MethodBodyContext, Name, Option[Expression], Type]
           ): (TestCtxt, Unit) = {
             val methodToAdd = new MethodDeclaration()
             methodToAdd.setName(command.name.toAST)

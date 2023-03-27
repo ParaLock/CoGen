@@ -61,11 +61,11 @@ trait Functional[AP <: AnyParadigm] extends Func {
           }
       }
 
-      implicit val canAddMethodInCompilationUnit: Understands[CompilationUnitCtxt, AddMethod[MethodBodyCtxt, Name, Expression]] = 
-        new Understands[CompilationUnitCtxt, AddMethod[MethodBodyCtxt, Name, Expression]] {
+      implicit val canAddMethodInCompilationUnit: Understands[CompilationUnitCtxt, AddMethod[MethodBodyCtxt, Name, Expression, Type]] =
+        new Understands[CompilationUnitCtxt, AddMethod[MethodBodyCtxt, Name, Expression, Type]] {
           def perform(
             context: CompilationUnitCtxt,
-            command: AddMethod[MethodBodyCtxt, Name, Term]
+            command: AddMethod[MethodBodyCtxt, Name, Term, Type]
           ): (CompilationUnitCtxt, Unit) = {
             val (methodCtxt, resultExp) =
               Command.runGenerator(

@@ -41,13 +41,14 @@ trait Functional {
     def addType(name: Name, spec: Generator[TypeContext, Unit]): Generator[CompilationUnitContext, Unit] =
       AnyParadigm.capability(AddType[Name, TypeContext](name, spec))
 
-    implicit val canAddMethodInCompilationUnit: Understands[CompilationUnitContext, AddMethod[MethodBodyContext, Name, Expression]]
+    implicit val canAddMethodInCompilationUnit: Understands[CompilationUnitContext, AddMethod[MethodBodyContext, Name, Expression, Type]]
     def addMethod(
         name: Name,
         spec: Generator[MethodBodyContext, Expression],
-        isPublic: Boolean = true
+        isPublic: Boolean = true,
+        thrownExceptions: Seq[Type] = Seq.empty
       ): Generator[CompilationUnitContext, Unit] =
-      AnyParadigm.capability(AddMethod(name, spec, isPublic))
+      AnyParadigm.capability(AddMethod(name, spec, isPublic, thrownExceptions))
 
     implicit val canResolveExpressionImportInCompilationUnit: Understands[CompilationUnitContext, ResolveImport[Import, Expression]]
     def resolveExpressionImport(expr: Expression): Generator[CompilationUnitContext, Option[Import]] =

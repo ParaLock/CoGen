@@ -99,13 +99,10 @@ trait JavaFXApplicationProvider extends BaseProvider {
     } yield None
   }
 
-
-
   def make_start_func(): Generator[paradigm.MethodBodyContext, Option[paradigm.syntax.Expression]] = {
       import paradigm.methodBodyCapabilities._
       import ooParadigm.methodBodyCapabilities._
       import impParadigm.imperativeCapabilities._
-
 
       for {
 
@@ -167,8 +164,6 @@ trait JavaFXApplicationProvider extends BaseProvider {
           names.mangle("Pos")
         )
 
-        _ <- debug(posClass.toString)
-
         _ <- addImport(imp)
 
         posExpr <- toStaticTypeExpression(posClass)
@@ -178,7 +173,7 @@ trait JavaFXApplicationProvider extends BaseProvider {
           primaryStage,
             "setAlignment",
           Seq(posMember)
-          )
+        )
 
 
       } yield None
@@ -219,14 +214,12 @@ trait JavaFXApplicationProvider extends BaseProvider {
         _ <- setParameters(Seq((names.mangle("args"), arrayType)))
         // --------------
 
-        //selfRef <- selfReference()
-//        launchRef <- getMember(selfRef, )
-//        result <- apply(selfRef, Seq.empty)
-
       } yield None
     }
   def make_class(clazzName: String): Generator[ProjectContext, Unit] = {
     import ooParadigm.projectCapabilities._
+    import ooParadigm.methodBodyCapabilities._
+
     val makeClass: Generator[ClassContext, Unit] = {
       import classCapabilities._
       val javafx_app_import = Seq(
@@ -234,28 +227,16 @@ trait JavaFXApplicationProvider extends BaseProvider {
         names.mangle("application"),
         names.mangle("Application")
       )
-//      val starImport = Seq(
-//        names.mangle("javafx"),
-//        names.mangle("application"),
-//        names.mangle("*")
-//      )
-//      val myImportAST = new ImportDeclaration(
-//        "java.util.*",
-//        false,
-//        true
-//      )
-//      val myImport = new Import(
-//
-//      )
+
       for {
+        exceptionClass <- findRawClass(names.mangle("Exception"))
         pt <- findClass(javafx_app_import : _ *)
-        //starPT <- findClass(starImport: _ *)
-        //_ <- addImport(starPT)
+
         _ <- resolveAndAddImport(pt)
         _ <- addParent(pt)
-        _ <- addMethod(initFuncName, make_init())
+        _ <- addMethod(initFuncName, make_init(),true, Seq(exceptionClass))
         _ <- addMethod(startFuncName, make_start_func())
-        _ <- addMethod(stopFuncName, make_stop_func())
+        _ <- addMethod(stopFuncName, make_stop_func(), true, Seq(exceptionClass))
         _ <- addMethod(mainFuncName, make_main_func())
       } yield ()
     }
