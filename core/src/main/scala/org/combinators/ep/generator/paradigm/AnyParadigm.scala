@@ -107,6 +107,10 @@ case class OutputToConsole[Expression](expr: Expression) extends Command {
   type Result = Unit
 }
 
+case class AddCodeFromFile(sourceFile: String, substitutions: Map[String, String]) extends Command {
+  type Result = Unit
+}
+
 trait AnyParadigm {
   val syntax: AbstractSyntax
 

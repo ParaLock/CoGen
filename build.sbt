@@ -1,3 +1,6 @@
+import play.twirl.sbt.SbtTwirl
+import sbt.Keys.libraryDependencies
+
 /** Settings shared globally. **/
 lazy val commonSettings = Seq(
   version := "1.0.0-SNAPSHOT",
