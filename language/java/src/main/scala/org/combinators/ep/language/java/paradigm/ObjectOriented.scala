@@ -1,8 +1,5 @@
 package org.combinators.ep.language.java.paradigm    /*DI:LD:AI*/
 
-import java.io.{File, InputStream}
-import java.net.URI
-import java.nio.file.{Files, Paths}
 import java.util.UUID
 import com.github.javaparser.ast.{ImportDeclaration, Modifier, NodeList}
 import com.github.javaparser.ast.`type`.ClassOrInterfaceType
@@ -17,9 +14,7 @@ import org.combinators.ep.generator.{Command, Understands}
 import org.combinators.ep.generator.paradigm.{ObjectOriented => OO, AnyParadigm => _, _}
 import org.combinators.ep.language.java.Syntax.MangledName
 import org.combinators.ep.language.java.{ClassCtxt, CompilationUnitCtxt, ContextSpecificResolver, CtorCtxt, JavaNameProvider, MethodBodyCtxt, TestCtxt}
-import com.github.javaparser.{JavaParser, StaticJavaParser}
 
-import scala.io.Source
 import scala.util.Try
 import scala.jdk.CollectionConverters._
 
@@ -73,24 +68,6 @@ trait ObjectOriented[AP <: AnyParadigm] extends OO {
 
             System.err.println (command.tag + ": " + context.cls)
             (context,())
-          }
-        }
-
-      implicit val canAddMethodFromFileInClass: Understands[ClassContext, AddCodeFromFile] =
-        new Understands[ClassContext, AddCodeFromFile] {
-          def perform(
-                       context: ClassContext,
-                       command: AddCodeFromFile
-                     ): (ClassContext, Unit) = {
-
-            val file = Source.fromFile(command.sourceFile)
-            val content = file.mkString
-            file.close()
-
-            val methodBody = StaticJavaParser.parseMethodDeclaration(content);
-            val resultCls = context.cls.clone()
-            resultCls.addMember(methodBody)
-              (context.copy(cls = resultCls), ())
           }
         }
 
@@ -432,7 +409,6 @@ trait ObjectOriented[AP <: AnyParadigm] extends OO {
             (context.copy(ctor = newCtor), ())
           }
         }
-
       implicit val canAddImportInConstructor: Understands[ConstructorContext, AddImport[Import]] =
         new Understands[ConstructorContext, AddImport[Import]] {
           def perform(
@@ -505,16 +481,6 @@ trait ObjectOriented[AP <: AnyParadigm] extends OO {
               val result = new MethodCallExpr(command.functional.toString, command.arguments:_*)
               (context, result)
             }
-          }
-        }
-
-      val canToStaticTypeExpressionInConstructor: Understands[ConstructorContext, ToStaticTypeExpression[Type, Expression]] =
-        new Understands[ConstructorContext, ToStaticTypeExpression[Type, Expression]] {
-          def perform(
-                       context: ConstructorContext,
-                       command: ToStaticTypeExpression[Type, Expression]
-                     ): (ConstructorContext, Expression) = {
-            (context, new TypeExpr(command.tpe.clone()))
           }
         }
 

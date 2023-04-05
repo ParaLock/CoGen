@@ -150,13 +150,6 @@ trait ObjectOriented {
     def getField(name: Name): Generator[ClassContext, Expression] =
       AnyParadigm.capability(GetField[Name,Expression](name))
 
-    implicit val canAddMethodFromFileInClass: Understands[ClassContext, AddCodeFromFile]
-    def addMethodFromFile(fileName: String, substitutions: Map[String, String], parentCls: Class[_]): Generator[ClassContext, Unit] = {
-      val resolvedPath = parentCls.getResource(fileName).getPath
-      AnyParadigm.capability(AddCodeFromFile(resolvedPath, substitutions))
-    }
-
-
     implicit val canAddMethodInClass: Understands[ClassContext, AddMethod[MethodBodyContext, Name, Option[Expression], Type]]
     def addMethod(
         name: Name,
@@ -240,11 +233,6 @@ trait ObjectOriented {
     def resolveImport(tpe: Type): Generator[ConstructorContext, Option[Import]] =
       AnyParadigm.capability(ResolveImport[Import, Type](tpe))
 
-    implicit val canToStaticTypeExpressionInConstructor: Understands[ConstructorContext, ToStaticTypeExpression[Type, Expression]]
-    def toStaticTypeExpression(tpe: Type): Generator[ConstructorContext, Expression] =
-      AnyParadigm.capability[ConstructorContext, Expression, ToStaticTypeExpression[Type, Expression]](ToStaticTypeExpression(tpe))
-
-
     implicit val canInstantiateObjectInConstructor: Understands[ConstructorContext, InstantiateObject[Type, Expression, ClassContext]]
     def instantiateObject(tpe: Type, constructorArguments: Seq[Expression], body:Option[Generator[ClassContext,Unit]] = None): Generator[ConstructorContext, Expression] =
       AnyParadigm.capability(InstantiateObject(tpe, constructorArguments, body))
@@ -269,7 +257,6 @@ trait ObjectOriented {
     def toTargetLanguageType(tpe: TypeRep): Generator[ConstructorContext, Type] =
       AnyParadigm.capability(ToTargetLanguageType[Type](tpe))
 
-
     implicit def canReifyInConstructor[T]: Understands[ConstructorContext, Reify[T, Expression]]
     def reify[T](tpe: TypeRep.OfHostType[T], elem: T): Generator[ConstructorContext, Expression] =
       AnyParadigm.capability(Reify[T, Expression](tpe, elem))
@@ -283,10 +270,6 @@ trait ObjectOriented {
       AnyParadigm.capability(GetConstructor[Type, Expression](tpe))
 
     implicit val canFindClassInConstructor: Understands[ConstructorContext, FindClass[Name, Type]]
-
-    def findRawClass(qualifiedName: Name*): Generator[ConstructorContext, Type] =
-      AnyParadigm.capability(FindClass[Name, Type](qualifiedName, true))
-
     def findClass(qualifiedName: Name*): Generator[ConstructorContext, Type] =
       AnyParadigm.capability(FindClass[Name, Type](qualifiedName))
 

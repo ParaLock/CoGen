@@ -10,6 +10,7 @@ import org.combinators.ep.generator.paradigm.{AddImport, AnyParadigm, ObjectOrie
 import org.combinators.ep.generator.{NameProvider, Understands}
 
 
+/** Attempt to provide a window provider -- perhaps can be abstracted.... */
 trait BaseProvider {
   val paradigm: AnyParadigm
   val names: NameProvider[paradigm.syntax.Name]
@@ -19,48 +20,6 @@ trait BaseProvider {
   //val impConstructorParadigm: Imperative.WithBase[ooParadigm.ConstructorContext, paradigm.type]
   import paradigm._
   import syntax._
-
-
-
-  def get_member_of_static_class(
-                                className: String,
-                                memberName: String
-                                ): Generator[MethodBodyContext, paradigm.syntax.Expression] = {
-    import impParadigm.imperativeCapabilities._
-    import ooParadigm.methodBodyCapabilities._
-    import paradigm.methodBodyCapabilities._
-    for {
-      posClass <- findRawClass(
-        names.mangle(className)
-      )
-      posExpr <- toStaticTypeExpression(posClass)
-      posMember <- getMember(
-        posExpr,
-        names.mangle(memberName)
-      )
-    } yield (posMember)
-  }
-
-
-//  def get_member_of_static_class_test(
-//                                                  className: String,
-//                                                  memberName: String
-//                                                ): Generator[ooParadigm.ConstructorContext, paradigm.syntax.Expression] = {
-//    import impParadigm.imperativeCapabilities._
-//    import ooParadigm.methodBodyCapabilities._
-//    import paradigm.methodBodyCapabilities._
-//
-//    for {
-//      posClass <- ooParadigm.constructorCapabilities.findRawClass(
-//        names.mangle(className)
-//      )
-//      posExpr <- ooParadigm.constructorCapabilities.toStaticTypeExpression(posClass)
-//      posMember <- getMember(
-//        posExpr,
-//        names.mangle(memberName)
-//      )
-//    } yield (posMember)
-//  }
 
   def make_field_class_assignment(
                                       className: String,
@@ -133,6 +92,23 @@ trait BaseProvider {
       sceneObjVar <- declareVar(classObjName, classType, Some(classObj))
     } yield sceneObjVar
   }
+
+
+//  def make_class_instantiation_in_constructor(
+//                                typeName: String,
+//                                varName: String,
+//                                constructorParams: Seq[Expression]
+//                              ): Generator[ooParadigm.ConstructorContext, paradigm.syntax.Expression] = {
+//    import ooParadigm.constructorCapabilities._
+//    //import impConstructorParadigm.imperativeCapabilities._
+//    for {
+//      classType <- findClass(names.mangle(typeName))
+//      _ <- resolveAndAddImport(classType)
+//      classObj <- instantiateObject(classType, constructorParams)
+//      classObjName <- freshName(names.mangle(varName))
+//      sceneObjVar <- declareVar(classObjName, classType, Some(classObj))
+//    } yield sceneObjVar
+//  }
 
   def make_field_assignment(
                                      expr: Expression,

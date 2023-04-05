@@ -9,8 +9,8 @@ import org.combinators.ep.generator.paradigm.control.Imperative
 import org.combinators.ep.generator.{AbstractSyntax, Command, NameProvider, Understands}
 import org.combinators.ep.generator.paradigm.ffi.{Arithmetic, Arrays, Assertions, Console, Equality}
 import org.combinators.ep.generator.paradigm.{AnyParadigm, FindClass, ObjectOriented}
-import java.nio.file.Paths
-import scala.reflect.runtime.universe._
+
+
 trait JavaFXApplicationProvider extends BaseProvider {
   val ooParadigm: ObjectOriented.WithBase[paradigm.type]
   val impParadigm: Imperative.WithBase[paradigm.MethodBodyContext,paradigm.type]
@@ -130,17 +130,6 @@ trait JavaFXApplicationProvider extends BaseProvider {
           Seq(msg)
         )
 
-        posMember <- get_member_of_static_class(
-          "Pos",
-          "CENTER"
-        )
-
-        _ <- make_method_call(
-          labelObj,
-          "setAlignment",
-          Seq(posMember)
-        )
-
         sceneObj <- make_class_instantiation(
           "Scene",
           "scene",
@@ -164,28 +153,33 @@ trait JavaFXApplicationProvider extends BaseProvider {
           Seq(sceneObj)
         )
 
+        posClass <- findRawClass(
+          names.mangle("javafx"),
+          names.mangle("application"),
+          names.mangle("Pos")
+        )
+        imp <- makeRawImport(
+          names.mangle("javafx"),
+          names.mangle("application"),
+          names.mangle("Pos")
+        )
+
+        _ <- addImport(imp)
+
+        posExpr <- toStaticTypeExpression(posClass)
+        posMember <- getMember(posExpr, names.mangle("CENTER"))
+
         _ <- make_method_call(
           primaryStage,
-          "Show",
-          Seq.empty
+            "setAlignment",
+          Seq(posMember)
         )
-//        imp <- makeRawImport(
-//          names.mangle("javafx"),
-//          names.mangle("application"),
-//          names.mangle("Pos")
-//        )
-//
-//        _ <- addImport(imp)
-
-
 
 
       } yield None
     }
 
-
-
-  def make_stop_func(): Generator[paradigm.MethodBodyContext, Option[Expression]] = {
+    def make_stop_func(): Generator[paradigm.MethodBodyContext, Option[Expression]] = {
       import paradigm.methodBodyCapabilities._
       import ooParadigm.methodBodyCapabilities._
       import impParadigm.imperativeCapabilities._
@@ -222,9 +216,9 @@ trait JavaFXApplicationProvider extends BaseProvider {
 
       } yield None
     }
-
   def make_class(clazzName: String): Generator[ProjectContext, Unit] = {
     import ooParadigm.projectCapabilities._
+    import ooParadigm.methodBodyCapabilities._
 
     val makeClass: Generator[ClassContext, Unit] = {
       import classCapabilities._
@@ -236,20 +230,14 @@ trait JavaFXApplicationProvider extends BaseProvider {
 
       for {
         exceptionClass <- findRawClass(names.mangle("Exception"))
-        applicationClass <- findRawClass(names.mangle("Application"))
+        pt <- findClass(javafx_app_import : _ *)
 
-        _ <- addParent(applicationClass)
+        _ <- resolveAndAddImport(pt)
+        _ <- addParent(pt)
         _ <- addMethod(initFuncName, make_init(),true, Seq(exceptionClass))
         _ <- addMethod(startFuncName, make_start_func())
         _ <- addMethod(stopFuncName, make_stop_func(), true, Seq(exceptionClass))
         _ <- addMethod(mainFuncName, make_main_func())
-
-//        _ <- addMethodFromFile(
-//          "/gui/javafx/test.java",
-//          Map[String, String]("myVarName" -> "test123"),
-//          this.getClass
-//        )
-
       } yield ()
     }
 

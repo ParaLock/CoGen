@@ -228,7 +228,6 @@ trait AnyParadigm extends AP {
           }
         }
 
-
       implicit val canAddBlockDefinitionsInMethodBody: Understands[MethodBodyCtxt, AddBlockDefinitions[Statement]] =
         new Understands[MethodBodyCtxt, AddBlockDefinitions[Statement]] {
           def perform(

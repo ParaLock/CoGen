@@ -105,27 +105,6 @@ trait QTApplicationProvider extends BaseProvider {
       } yield None
     }
 
-  def make_init_func(): Generator[paradigm.MethodBodyContext, Option[Expression]] = {
-    import paradigm.methodBodyCapabilities._
-    import ooParadigm.methodBodyCapabilities._
-    import impParadigm.imperativeCapabilities._
-    for {
-
-      // Make signatures
-      intType <- toTargetLanguageType(TypeRep.Int)
-      _ <- paradigm.methodBodyCapabilities.setReturnType(intType)
-
-      _ <- print_message("Inside stop() method! Destroy resources. Perform Cleanup.")
-
-      // call super.stop()
-      sp <- superReference()
-      stopFunc <- getMember(sp, stopFuncName)
-      result <- apply(stopFunc, Seq.empty)
-
-    } yield Some(result)
-  }
-
-
   def make_main_func(): Generator[paradigm.MethodBodyContext, Option[Expression]] = {
       import paradigm.methodBodyCapabilities._
       import ooParadigm.methodBodyCapabilities._
@@ -155,6 +134,15 @@ trait QTApplicationProvider extends BaseProvider {
         "Hello, World"
       )
 
+//      myVar <- declareVar(
+//
+//      )
+
+      //      _ <- make_method_call(
+//        labelObj,
+//        "setText",
+//        Seq(title)
+//      )
 
     } yield()
 
@@ -164,24 +152,17 @@ trait QTApplicationProvider extends BaseProvider {
   def make_class(clazzName: String): Generator[ProjectContext, Unit] = {
     import ooParadigm.projectCapabilities._
     val makeClass: Generator[ClassContext, Unit] = {
-      import ooParadigm.classCapabilities._
-      import paradigm.methodBodyCapabilities._
-
+      import classCapabilities._
+      val app_import = Seq(
+        names.mangle("io"),
+        names.mangle("qt"),
+        names.mangle("core"),
+        names.mangle("QMainWindow"),
+      )
       for {
-
-        appImport <- makeRawImport(
-          names.mangle("io"),
-          names.mangle("qt"),
-          names.mangle("core"),
-          names.mangle("QMainWindow"),
-        )
-
-        qMainWindowClass <- findRawClass(
-          names.mangle("QMainWindow")
-        )
-        _ <- ooParadigm.classCapabilities.addImport(appImport)
-
-        _ <- addParent(qMainWindowClass)
+        pt <- findClass(app_import : _ *)
+        _ <- resolveAndAddImport(pt)
+        _ <- addParent(pt)
         _ <- addConstructor(make_constructor())
         _ <- addMethod(names.mangle("closeEvent"), make_close_event())
         _ <- addMethod(names.mangle("main"), make_main_func())
