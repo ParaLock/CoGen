@@ -1,3 +1,6 @@
+import play.twirl.sbt.SbtTwirl
+import sbt.Keys.libraryDependencies
+
 /** Settings shared globally. **/
 lazy val commonSettings = Seq(
   version := "1.0.0-SNAPSHOT",
@@ -34,11 +37,15 @@ lazy val commonSettings = Seq(
     "org.scalameta" %% "contrib" % "4.1.6",
     "org.typelevel" %% "cats-core" % "2.3.1",
     "org.typelevel" %% "cats-free" % "2.3.1",
-    "org.typelevel" %% "cats-effect" % "2.3.1"
+    "org.typelevel" %% "cats-effect" % "2.3.1",
+    "com.typesafe.play" %% "twirl-api" % "1.5.2",
+    "org.combinators" %% "templating" % "1.1.0"
+
   ),
   evictionErrorLevel := Level.Info,
 
-  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3")
+  addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
+
 )
 
 /** The core components to model expression problem code generators and domains.
@@ -86,13 +93,31 @@ lazy val languageJava =
     .settings(
        mainClass in (Compile, run) := Some("org.combinators.ep.language.java.DirectToDiskMainJ")
      )
+    .enablePlugins(SbtTwirl)
 lazy val languageScala = standardLanguageProject("scala")
 
 lazy val helloWorld:Project =
   (Project(id = s"helloworld", base = file(s"helloworld")))
     .settings(commonSettings: _*)
+    .enablePlugins(SbtTwirl)
     .settings(
       moduleName := s"helloworld",
+
+      Compile / TwirlKeys.compileTemplates / sourceDirectories := Seq(
+        sourceDirectory.value / "main" / "java-templates"
+      ),
+
+      TwirlKeys.templateFormats += ("javatemplate" -> "org.combinators.templating.twirl.JavaFormat"),
+      TwirlKeys.templateFormats += ("py" -> "org.combinators.templating.twirl.PythonFormat"),
+      TwirlKeys.templateImports := Seq(),
+      TwirlKeys.templateImports += "org.combinators.templating.twirl.Java",
+      TwirlKeys.templateImports += "org.combinators.templating.twirl.Python",
+      TwirlKeys.templateImports += "com.github.javaparser.ast._",
+      TwirlKeys.templateImports += "com.github.javaparser.ast.body._",
+      TwirlKeys.templateImports += "com.github.javaparser.ast.comments._",
+      TwirlKeys.templateImports += "com.github.javaparser.ast.expr._",
+      TwirlKeys.templateImports += "com.github.javaparser.ast.stmt._",
+      TwirlKeys.templateImports += "com.github.javaparser.ast.`type`._",
     )
     .dependsOn(core, languageJava, languageScala)
 

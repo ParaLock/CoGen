@@ -106,6 +106,17 @@ trait JavaFXApplicationProvider extends BaseProvider {
 
       for {
 
+//        _ <- loadMethodFromFragment(
+//          "path_to_artifact",
+//          substitutions
+//        )
+//
+//        _ <- addMethodToFragment(
+//          "path_to_fragment",
+//          "location",
+//          Generator[]
+//        )
+
         unitType <- toTargetLanguageType(TypeRep.Unit)
         intType <- toTargetLanguageType(TypeRep.Int)
 
