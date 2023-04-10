@@ -1,5 +1,6 @@
 import play.twirl.sbt.SbtTwirl
-import sbt.Keys.libraryDependencies
+import play.twirl.sbt.SbtTwirl.defaultSettings
+
 
 /** Settings shared globally. **/
 lazy val commonSettings = Seq(
@@ -103,12 +104,13 @@ lazy val helloWorld:Project =
     .settings(
       moduleName := s"helloworld",
 
-      Compile / TwirlKeys.compileTemplates / sourceDirectories := Seq(
+      (Compile / TwirlKeys.compileTemplates / sourceDirectories) := Seq(
         sourceDirectory.value / "main" / "java-templates"
       ),
 
-      TwirlKeys.templateFormats += ("javatemplate" -> "org.combinators.templating.twirl.JavaFormat"),
+      TwirlKeys.templateFormats += ("java" -> "org.combinators.templating.twirl.JavaFormat"),
       TwirlKeys.templateFormats += ("py" -> "org.combinators.templating.twirl.PythonFormat"),
+
       TwirlKeys.templateImports := Seq(),
       TwirlKeys.templateImports += "org.combinators.templating.twirl.Java",
       TwirlKeys.templateImports += "org.combinators.templating.twirl.Python",

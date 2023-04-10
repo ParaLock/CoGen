@@ -150,6 +150,11 @@ trait ObjectOriented {
     def getField(name: Name): Generator[ClassContext, Expression] =
       AnyParadigm.capability(GetField[Name,Expression](name))
 
+    implicit val canAddMethodFromFragmentInClass: Understands[ClassContext, AddFragment]
+    def addMethodFromFragment(fragment: String): Generator[ClassContext, Unit] = {
+      AnyParadigm.capability(AddFragment(fragment))
+    }
+
     implicit val canAddMethodInClass: Understands[ClassContext, AddMethod[MethodBodyContext, Name, Option[Expression], Type]]
     def addMethod(
         name: Name,

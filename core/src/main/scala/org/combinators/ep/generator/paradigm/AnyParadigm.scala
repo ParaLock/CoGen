@@ -31,6 +31,15 @@ case class Reify[T, Expression](tpe: TypeRep.OfHostType[T], value: T) extends Co
   type Result = Expression
 }
 
+case class PopulateFragment[FragmentType](args: List[String]) extends Command {
+  type Result = Unit
+}
+
+case class AddFragment(fragment: String) extends Command {
+  type Result = Unit
+}
+
+
 /** Adds a method using the body generator's resulting expression as return value. */
 case class AddMethod[MethodBodyContext, Name, Expression, Type](
    name: Name,
@@ -126,6 +135,10 @@ trait AnyParadigm {
 
   /** Allows clean ability to capture dependencies (i.e., imports) within a given Method Body. */
   type MethodBodyContext
+
+  trait FragmentCapabilities {
+
+  }
 
   /** The overall project stores the CompilationUnits which can be added to it. */
   trait ProjectCapabilities {

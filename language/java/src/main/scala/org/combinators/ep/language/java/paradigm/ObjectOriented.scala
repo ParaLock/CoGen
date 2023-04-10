@@ -1,5 +1,7 @@
 package org.combinators.ep.language.java.paradigm    /*DI:LD:AI*/
 
+import com.github.javaparser.StaticJavaParser
+
 import java.util.UUID
 import com.github.javaparser.ast.{ImportDeclaration, Modifier, NodeList}
 import com.github.javaparser.ast.`type`.ClassOrInterfaceType
@@ -15,6 +17,7 @@ import org.combinators.ep.generator.paradigm.{ObjectOriented => OO, AnyParadigm 
 import org.combinators.ep.language.java.Syntax.MangledName
 import org.combinators.ep.language.java.{ClassCtxt, CompilationUnitCtxt, ContextSpecificResolver, CtorCtxt, JavaNameProvider, MethodBodyCtxt, TestCtxt}
 
+import scala.io.Source
 import scala.util.Try
 import scala.jdk.CollectionConverters._
 
@@ -180,6 +183,22 @@ trait ObjectOriented[AP <: AnyParadigm] extends OO {
           ): (ClassContext, Expression) =
             (context, new NameExpr(command.name.mangled))
         }
+
+      implicit val canAddMethodFromFragmentInClass: Understands[ClassContext, AddFragment] =
+        new Understands[ClassContext, AddFragment] {
+          def perform(
+                       context: ClassContext,
+                       command: AddFragment
+                     ): (ClassContext, Unit) = {
+
+            val methodBody = StaticJavaParser.parseMethodDeclaration(command.fragment);
+            val resultCls = context.cls.clone()
+            resultCls.addMember(methodBody)
+            (context.copy(cls = resultCls), ())
+          }
+        }
+
+
       implicit val canAddMethodInClass: Understands[ClassContext, AddMethod[base.MethodBodyContext, Name, Option[Expression], Type]] =
         new Understands[ClassContext, AddMethod[base.MethodBodyContext, Name, Option[Expression], Type]] {
           def perform(

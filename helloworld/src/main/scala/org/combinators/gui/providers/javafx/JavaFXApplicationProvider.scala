@@ -10,6 +10,8 @@ import org.combinators.ep.generator.{AbstractSyntax, Command, NameProvider, Unde
 import org.combinators.ep.generator.paradigm.ffi.{Arithmetic, Arrays, Assertions, Console, Equality}
 import org.combinators.ep.generator.paradigm.{AnyParadigm, FindClass, ObjectOriented}
 
+import java.lang.CharSequence
+
 
 trait JavaFXApplicationProvider extends BaseProvider {
   val ooParadigm: ObjectOriented.WithBase[paradigm.type]
@@ -102,20 +104,25 @@ trait JavaFXApplicationProvider extends BaseProvider {
   def make_start_func(): Generator[paradigm.MethodBodyContext, Option[paradigm.syntax.Expression]] = {
       import paradigm.methodBodyCapabilities._
       import ooParadigm.methodBodyCapabilities._
+      import ooParadigm.classCapabilities.addMethodFromFragment
       import impParadigm.imperativeCapabilities._
+
+
+//    val test1 = templates.java.FragmentTest.render(
+//      "test1",
+//      "test2"
+//    )
+//    val test = (CharSequence)test1
 
       for {
 
-//        _ <- loadMethodFromFragment(
-//          "path_to_artifact",
-//          substitutions
-//        )
-//
-//        _ <- addMethodToFragment(
+//        _ <- addToFragment[FragmentTest](
 //          "path_to_fragment",
-//          "location",
-//          Generator[]
+//        )(
+//          myMethod,
+//          myMethod,
 //        )
+
 
         unitType <- toTargetLanguageType(TypeRep.Unit)
         intType <- toTargetLanguageType(TypeRep.Int)
@@ -126,6 +133,7 @@ trait JavaFXApplicationProvider extends BaseProvider {
         _ <- resolveAndAddImport(stageType)
         _ <- setParameters(Seq((names.mangle("primaryStage"), stageType)))
         //----
+
 
         args <- getArguments()
         (name, tpe, primaryStage) = args.head
@@ -233,6 +241,7 @@ trait JavaFXApplicationProvider extends BaseProvider {
 
     val makeClass: Generator[ClassContext, Unit] = {
       import classCapabilities._
+
       val javafx_app_import = Seq(
         names.mangle("javafx"),
         names.mangle("application"),
@@ -243,9 +252,18 @@ trait JavaFXApplicationProvider extends BaseProvider {
         exceptionClass <- findRawClass(names.mangle("Exception"))
         pt <- findClass(javafx_app_import : _ *)
 
+
+
+        _ <- addMethodFromFragment(
+          templates.java.FragmentTest.render(
+            "test1",
+            "test2"
+          ).body
+        )
+
         _ <- resolveAndAddImport(pt)
         _ <- addParent(pt)
-        _ <- addMethod(initFuncName, make_init(),true, Seq(exceptionClass))
+        myMethod <- addMethod(initFuncName, make_init(),true, Seq(exceptionClass))
         _ <- addMethod(startFuncName, make_start_func())
         _ <- addMethod(stopFuncName, make_stop_func(), true, Seq(exceptionClass))
         _ <- addMethod(mainFuncName, make_main_func())
