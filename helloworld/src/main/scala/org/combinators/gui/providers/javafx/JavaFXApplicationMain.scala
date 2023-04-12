@@ -41,7 +41,7 @@ class JavaFXApplicationMain {
     generator.intsInMethod,
     generator.assertionsInMethod,
     generator.equalityInMethod
-  )
+  )(generator.templatingMethodInClass)
 
 
   val persistable = FileWithPathPersistable[FileWithPath]

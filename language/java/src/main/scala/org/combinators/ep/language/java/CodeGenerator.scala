@@ -6,6 +6,7 @@ import com.github.javaparser.ast.`type`.PrimitiveType
 import com.github.javaparser.ast.expr.{DoubleLiteralExpr, IntegerLiteralExpr, TypeExpr}
 import org.combinators.ep.domain.abstractions.TypeRep
 import org.combinators.ep.generator.Command
+import org.combinators.ep.generator.paradigm.Templating
 import org.combinators.ep.language.java.paradigm._
 import org.combinators.ep.language.java.paradigm.ffi._
 
@@ -22,6 +23,9 @@ sealed class CodeGenerator(config: Config) { cc =>
   val imperativeInConstructor: Imperative[CtorCtxt, paradigm.type] = Imperative.inConstructorContext(paradigm)
   val parametricPolymorphism: ParametricPolymorphism[paradigm.type] = ParametricPolymorphism(paradigm)
   val generics: Generics.Aux[paradigm.type, ooParadigm.type, parametricPolymorphism.type] = Generics(paradigm)(ooParadigm, parametricPolymorphism)
+
+  val templatingMethodInClass: Templating.WithBase[ooParadigm.ClassContext, paradigm.MethodBodyContext, paradigm.type] =
+    new TemplatingMethodInClass[paradigm.type] {val base = paradigm}
 
   val booleansInMethod = new Booleans[MethodBodyCtxt, paradigm.type](paradigm)
   val booleansInConstructor = new Booleans[MethodBodyCtxt, paradigm.type](paradigm)

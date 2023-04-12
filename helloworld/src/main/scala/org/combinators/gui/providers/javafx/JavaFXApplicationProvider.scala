@@ -4,11 +4,10 @@ import com.github.javaparser.ast.ImportDeclaration
 import org.combinators.common._
 import org.combinators.ep.domain.abstractions.{DataType, DataTypeCase, TypeRep}
 import org.combinators.ep.generator.Command.{Generator, lift}
-import org.combinators.ep.generator.paradigm.ObjectOriented
+import org.combinators.ep.generator.paradigm.{AnyParadigm, FindClass, ObjectOriented, Templating}
 import org.combinators.ep.generator.paradigm.control.Imperative
 import org.combinators.ep.generator.{AbstractSyntax, Command, NameProvider, Understands}
 import org.combinators.ep.generator.paradigm.ffi.{Arithmetic, Arrays, Assertions, Console, Equality}
-import org.combinators.ep.generator.paradigm.{AnyParadigm, FindClass, ObjectOriented}
 
 import java.lang.CharSequence
 
@@ -25,6 +24,8 @@ trait JavaFXApplicationProvider extends BaseProvider {
   val array: Arrays.WithBase[paradigm.MethodBodyContext, paradigm.type]
   val asserts: Assertions.WithBase[paradigm.MethodBodyContext, paradigm.type]
   val eqls: Equality.WithBase[paradigm.MethodBodyContext, paradigm.type]
+
+  val templating: Templating.WithBase[ooParadigm.ClassContext, paradigm.MethodBodyContext, paradigm.type]
 
   import paradigm._
   import syntax._
@@ -108,20 +109,7 @@ trait JavaFXApplicationProvider extends BaseProvider {
       import impParadigm.imperativeCapabilities._
 
 
-//    val test1 = templates.java.FragmentTest.render(
-//      "test1",
-//      "test2"
-//    )
-//    val test = (CharSequence)test1
-
       for {
-
-//        _ <- addToFragment[FragmentTest](
-//          "path_to_fragment",
-//        )(
-//          myMethod,
-//          myMethod,
-//        )
 
 
         unitType <- toTargetLanguageType(TypeRep.Unit)
@@ -218,6 +206,28 @@ trait JavaFXApplicationProvider extends BaseProvider {
       } yield Some(result)
     }
 
+
+  def make_myfunc_statments(): Generator[paradigm.MethodBodyContext, Unit] = {
+    import paradigm.methodBodyCapabilities._
+    import ooParadigm.methodBodyCapabilities._
+    import impParadigm.imperativeCapabilities._
+    for {
+
+      // Make signatures
+      intType <- toTargetLanguageType(TypeRep.Int)
+      _ <- paradigm.methodBodyCapabilities.setReturnType(intType)
+
+      _ <- print_message("Inside stop() method! Destroy resources. Perform Cleanup.")
+
+      // call super.stop()
+      sp <- superReference()
+      stopFunc <- getMember(sp, stopFuncName)
+      result <- apply(stopFunc, Seq.empty)
+
+    } yield ()
+  }
+
+
   def make_main_func(): Generator[paradigm.MethodBodyContext, Option[Expression]] = {
       import paradigm.methodBodyCapabilities._
       import ooParadigm.methodBodyCapabilities._
@@ -253,24 +263,47 @@ trait JavaFXApplicationProvider extends BaseProvider {
         pt <- findClass(javafx_app_import : _ *)
 
 
-
-        _ <- addMethodFromFragment(
-          templates.java.FragmentTest.render(
-            "test1",
-            "test2"
-          ).body
-        )
+//
+//        _ <- addMethodFromFragment(
+//          templates.java.FragmentTest.render(
+//            "test1",
+//            "test2"
+//          ).body
+//        )
 
         _ <- resolveAndAddImport(pt)
         _ <- addParent(pt)
         myMethod <- addMethod(initFuncName, make_init(),true, Seq(exceptionClass))
         _ <- addMethod(startFuncName, make_start_func())
-        _ <- addMethod(stopFuncName, make_stop_func(), true, Seq(exceptionClass))
+        //_ <- addMethod(stopFuncName, make_stop_func(), true, Seq(exceptionClass))
         _ <- addMethod(mainFuncName, make_main_func())
       } yield ()
     }
 
-    addClassToProject(makeClass, names.mangle(clazzName))
+    for {
+
+        _ <- addClassToProject(make_class_template, names.mangle("Test"))
+        _ <- addClassToProject(makeClass, names.mangle(clazzName))
+
+    } yield ()
+
+  }
+
+  def make_class_template() : Generator[ClassContext, Unit] = {
+
+    import templating.templatingCapabilities._
+
+    for {
+
+      _ <- loadFragment(this.getClass.getResource("/Fragment1.java"))
+
+      templateVar1 <- getTemplateVar[Unit](
+        "MyFuncStmts"
+      )
+
+      _ <- replace[Unit](templateVar1, make_myfunc_statments())
+    } yield ()
+
   }
 
   def make_window_test(): Generator[paradigm.MethodBodyContext, Seq[paradigm.syntax.Expression]] = {
@@ -311,15 +344,16 @@ object JavaFXApplicationProvider {
    eqlsIn: Equality.WithBase[base.MethodBodyContext, base.type],
    ffiarith:  Arithmetic.WithBase[base.MethodBodyContext, base.type, Int],
    ffiassert: Assertions.WithBase[base.MethodBodyContext, base.type],
-   ffiequal: Equality.WithBase[base.MethodBodyContext, base.type]
+   ffiequal: Equality.WithBase[base.MethodBodyContext, base.type],
   )
-  : JavaFXApplicationProvider.WithParadigm[base.type] =
+  (_templating: Templating.WithBase[oo.ClassContext, base.MethodBodyContext, base.type])
+: JavaFXApplicationProvider.WithParadigm[base.type] =
     new JavaFXApplicationProvider {
       override val paradigm: base.type = base
       val impParadigm: imp.type = imp
       //val impConstructorParadigm: impConstructor.type = impConstructor
       override val names: NameProvider[paradigm.syntax.Name] = nameProvider
-      override val ooParadigm: ObjectOriented.WithBase[paradigm.type] = oo
+      override val ooParadigm: oo.type = oo
       override val console: Console.WithBase[base.MethodBodyContext, paradigm.type] = con
       override val array: Arrays.WithBase[base.MethodBodyContext, paradigm.type] = arr
       override val asserts: Assertions.WithBase[base.MethodBodyContext, paradigm.type] = assertsIn
@@ -327,6 +361,7 @@ object JavaFXApplicationProvider {
       override val ffiArithmetic: Arithmetic.WithBase[paradigm.MethodBodyContext, paradigm.type, Int] = ffiarith
       override val ffiAssertions: Assertions.WithBase[paradigm.MethodBodyContext, paradigm.type] = ffiassert
       override val ffiEquality: Equality.WithBase[paradigm.MethodBodyContext, paradigm.type] = ffiequal
+      override val templating: Templating.WithBase[ooParadigm.ClassContext, paradigm.MethodBodyContext, paradigm.type] = _templating
     }
 }
 
