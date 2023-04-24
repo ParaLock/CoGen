@@ -4,8 +4,7 @@ public class MyClass {
 
         int i = 1;
 
-        //MyFuncStmts
+        //@COGEN<MyFuncStmts>
 
     }
 }
-

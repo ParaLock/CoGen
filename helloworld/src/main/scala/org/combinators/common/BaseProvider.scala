@@ -5,8 +5,8 @@ import org.combinators.ep.domain.instances.{DataTypeInstance, InstanceRep}
 import org.combinators.ep.generator.Command.{Generator, _}
 import org.combinators.ep.generator.paradigm.AnyParadigm.syntax._
 import org.combinators.ep.generator.paradigm.control.Imperative
-import org.combinators.ep.generator.paradigm.ffi.Console
-import org.combinators.ep.generator.paradigm.{AddImport, AnyParadigm, ObjectOriented, ResolveImport}
+import org.combinators.ep.generator.paradigm.ffi.{Arithmetic, Arrays, Assertions, Console, Equality}
+import org.combinators.ep.generator.paradigm.{AddImport, AnyParadigm, FindClass, ObjectOriented, ResolveImport, Templating}
 import org.combinators.ep.generator.{NameProvider, Understands}
 
 
@@ -17,9 +17,51 @@ trait BaseProvider {
   val console: Console.WithBase[paradigm.MethodBodyContext, paradigm.type]
   val impParadigm: Imperative.WithBase[paradigm.MethodBodyContext,paradigm.type]
   val ooParadigm: ObjectOriented.WithBase[paradigm.type]
-  //val impConstructorParadigm: Imperative.WithBase[ooParadigm.ConstructorContext, paradigm.type]
+  val ffiArithmetic: Arithmetic.WithBase[paradigm.MethodBodyContext, paradigm.type, Int]
+  val ffiAssertions: Assertions.WithBase[paradigm.MethodBodyContext, paradigm.type]
+  val ffiEquality: Equality.WithBase[paradigm.MethodBodyContext, paradigm.type]
+  val array: Arrays.WithBase[paradigm.MethodBodyContext, paradigm.type]
+  val asserts: Assertions.WithBase[paradigm.MethodBodyContext, paradigm.type]
+  val eqls: Equality.WithBase[paradigm.MethodBodyContext, paradigm.type]
+
+
   import paradigm._
   import syntax._
+
+  /**
+    * Default registration for findClass, which works with each registerTypeMapping for the different approaches.
+    *
+    * Sometimes the mapping is fixed for an EP approach, but sometimes it matters when a particular class is requested
+    * in the evolution of the system over time.
+    *
+    * @param dtpe
+    * @param canFindClass
+    * @tparam Ctxt
+    * @return
+    */
+  def domainTypeLookup[Ctxt](dtpe: DataType)(implicit canFindClass: Understands[Ctxt, FindClass[Name, Type]]): Generator[Ctxt, Type] = {
+    FindClass(Seq(names.mangle(names.conceptNameOf(dtpe)))).interpret(canFindClass)
+  }
+
+  /** Provides meaningful default solution to find the base data type in many object-oriented approaches.
+    *
+    * This enables target-language classes to be retrieved from within the code generator in the Method, Class or Constructor contexts.
+    */
+  def registerTypeMapping(tpe: DataType): Generator[ProjectContext, Unit] = {
+    import paradigm.projectCapabilities.addTypeLookupForMethods
+    import ooParadigm.methodBodyCapabilities.canFindClassInMethod // must be present, regardless of IntelliJ
+    import ooParadigm.projectCapabilities.addTypeLookupForClasses
+    import ooParadigm.projectCapabilities.addTypeLookupForConstructors
+    import ooParadigm.classCapabilities.canFindClassInClass // must be present, regardless of IntelliJ
+    import ooParadigm.constructorCapabilities.canFindClassInConstructor // must be present, regardless of IntelliJ
+    val dtpe = TypeRep.DataType(tpe)
+    for {
+      _ <- addTypeLookupForMethods(dtpe, domainTypeLookup(tpe))
+      _ <- addTypeLookupForClasses(dtpe, domainTypeLookup(tpe))
+      _ <- addTypeLookupForConstructors(dtpe, domainTypeLookup(tpe))
+    } yield ()
+  }
+
 
   def make_field_class_assignment(
                                       className: String,
@@ -127,11 +169,37 @@ trait BaseProvider {
 
   }
 
+  def make_static_method_call(
+                               obj: Type,
+                               methodName: String,
+                               args: Seq[Expression]
+                           ): Generator[paradigm.MethodBodyContext, Unit] = {
+    import impParadigm.imperativeCapabilities._
+    import ooParadigm.methodBodyCapabilities._
+    import paradigm.methodBodyCapabilities._
+
+    for {
+
+      expr <- toStaticTypeExpression(obj)
+
+      _ <- make_method_call(
+        expr,
+        methodName,
+        args
+      )
+
+    } yield ()
+
+  }
+
+
+
   def make_method_call(
                    obj: Expression,
                    methodName: String,
-                   args: Seq[Expression]
-                 ): Generator[paradigm.MethodBodyContext, Unit] = {
+                   args: Seq[Expression],
+                   isFloating: Boolean = false
+                 ): Generator[paradigm.MethodBodyContext, Expression] = {
     import impParadigm.imperativeCapabilities._
     import ooParadigm.methodBodyCapabilities._
     import paradigm.methodBodyCapabilities._
@@ -146,9 +214,40 @@ trait BaseProvider {
       liftedStmt <- liftExpression(stmt)
       _ <- addBlockDefinitions(Seq(liftedStmt))
 
-    } yield ()
+    } yield (stmt)
   }
 
+  def make_chained_method_call(
+                                obj: Expression,
+                                method1Name: String,
+                                method1Args: Seq[Expression],
+                                method2Name: String,
+                                method2Args: Seq[Expression],
+                              ): Generator[paradigm.MethodBodyContext, Unit] = {
+
+    import impParadigm.imperativeCapabilities._
+    import ooParadigm.methodBodyCapabilities._
+    import paradigm.methodBodyCapabilities._
+
+    for {
+      method1 <- getMember(
+        obj,
+        names.mangle(method1Name)
+      )
+      method1Invoke <- apply(method1, method1Args)
+      method1InvokeLifted <- liftExpression(method1Invoke)
+
+      method2 <- getMember(
+        method1Invoke,
+        names.mangle(method2Name)
+      )
+      method2Invoke <- apply(method2, method2Args)
+      method2InvokeLifted <- liftExpression(method2Invoke)
+      _ <- addBlockDefinitions(Seq(method2InvokeLifted))
+
+    } yield()
+
+  }
 
   def make_method_call_with_ret(
                         obj: Expression,

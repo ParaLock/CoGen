@@ -1,7 +1,8 @@
 package org.combinators.ep.language.java.paradigm    /*DI:LD:AI*/
 
+import com.github.javaparser.ast.NodeList
 import com.github.javaparser.ast.expr.{AssignExpr, NameExpr, VariableDeclarationExpr}
-import com.github.javaparser.ast.stmt.{BlockStmt, ExpressionStmt, IfStmt, ReturnStmt, WhileStmt}
+import com.github.javaparser.ast.stmt.{BlockStmt, ExpressionStmt, ForStmt, IfStmt, ReturnStmt, WhileStmt}
 import org.combinators.ep.generator.{Command, Understands}
 import org.combinators.ep.generator.Command.Generator
 import org.combinators.ep.generator.paradigm.{DeclareVariable, IfThenElse}
@@ -94,6 +95,32 @@ trait Imperative[Ctxt, AP <: AnyParadigm] extends Imp[Ctxt] {
           (manip.copyWithBlock(whileCtxt, manip.getBlock(context)), whileStmt)
         }
       }
+
+    implicit val canFor: Understands[Ctxt, For[Ctxt, Expression, Statement]] =
+      new Understands[Ctxt, For[Ctxt, Expression, Statement]] {
+        def perform(context: Ctxt, command: For[Ctxt, Expression, Statement]): (Ctxt, Statement) = {
+          val (forCtxt, _) = Command.runGenerator(command.block, manip.nextBlockContext(context))
+          val forStmt = new ForStmt()
+
+          val initAsNodes = new NodeList[Expression]()
+          for (item <- command.init) {
+            initAsNodes.add(item)
+          }
+
+          val updateAsNodes = new NodeList[Expression]()
+          for (item <- command.update) {
+            updateAsNodes.add(item)
+          }
+
+          forStmt.setInitialization(initAsNodes)
+          forStmt.setCompare(command.compare)
+          forStmt.setUpdate(updateAsNodes)
+
+          forStmt.setBody(manip.getBlock(forCtxt))
+          (manip.copyWithBlock(forCtxt, manip.getBlock(context)), forStmt)
+        }
+      }
+
   }
 }
 

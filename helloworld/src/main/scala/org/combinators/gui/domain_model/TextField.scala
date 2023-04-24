@@ -1,5 +1,0 @@
-package org.combinators.gui.domain_model
-
-class TextField() extends Element {
-
-}

@@ -19,6 +19,16 @@ case class While[Ctxt, Expression, Statement](condition: Expression, block: Gene
   type Result = Statement
 }
 
+case class For[Ctxt, Expression, Statement](
+                                             compare: Expression,
+                                             init: Seq[Expression],
+                                             update: Seq[Expression],
+                                             block: Generator[Ctxt, Unit]
+                                           ) extends Command {
+  type Result = Statement
+}
+
+
 case class Return[Expression, Statement](exp: Expression) extends Command {
   type Result = Statement
 }
@@ -56,6 +66,16 @@ trait Imperative[Context] {
     implicit val canWhile: Understands[Context, While[Context, Expression, Statement]]
     def whileLoop(condition: Expression, block: Generator[Context, Unit]): Generator[Context, Statement] =
       AnyParadigm.capability(While[Context, Expression, Statement](condition, block))
+
+    implicit val canFor: Understands[Context, For[Context, Expression, Statement]]
+    def forLoop(
+                init: Seq[Expression],
+                compare: Expression,
+                update: Seq[Expression],
+                block: Generator[Context, Unit]
+              ): Generator[Context, Statement] =
+      AnyParadigm.capability(For[Context, Expression, Statement](compare, init, update, block))
+
 
     implicit val canReturn: Understands[Context, Return[Expression, Statement]]
     def returnStmt(exp: Expression): Generator[Context, Statement] =

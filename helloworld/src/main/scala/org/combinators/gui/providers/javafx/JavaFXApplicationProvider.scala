@@ -8,22 +8,15 @@ import org.combinators.ep.generator.paradigm.{AnyParadigm, FindClass, ObjectOrie
 import org.combinators.ep.generator.paradigm.control.Imperative
 import org.combinators.ep.generator.{AbstractSyntax, Command, NameProvider, Understands}
 import org.combinators.ep.generator.paradigm.ffi.{Arithmetic, Arrays, Assertions, Console, Equality}
+import org.combinators.graphics.GUIDomain
+import org.combinators.gui.domain_model.GridLayout
 
 import java.lang.CharSequence
 
 
 trait JavaFXApplicationProvider extends BaseProvider {
-  val ooParadigm: ObjectOriented.WithBase[paradigm.type]
-  val impParadigm: Imperative.WithBase[paradigm.MethodBodyContext,paradigm.type]
-  //val impConstructorParadigm: Imperative.WithBase[ooParadigm.ConstructorContext, paradigm.type]
-  val names: NameProvider[paradigm.syntax.Name]
-  val ffiArithmetic: Arithmetic.WithBase[paradigm.MethodBodyContext, paradigm.type, Int]
-  val ffiAssertions : Assertions.WithBase[paradigm.MethodBodyContext, paradigm.type]
-  val ffiEquality : Equality.WithBase[paradigm.MethodBodyContext, paradigm.type]
-  val console: Console.WithBase[paradigm.MethodBodyContext, paradigm.type]
-  val array: Arrays.WithBase[paradigm.MethodBodyContext, paradigm.type]
-  val asserts: Assertions.WithBase[paradigm.MethodBodyContext, paradigm.type]
-  val eqls: Equality.WithBase[paradigm.MethodBodyContext, paradigm.type]
+
+  val domain: GUIDomain
 
   val templating: Templating.WithBase[ooParadigm.ClassContext, paradigm.MethodBodyContext, paradigm.type]
 
@@ -37,39 +30,6 @@ trait JavaFXApplicationProvider extends BaseProvider {
   lazy val mainFuncName = names.mangle("main")
   lazy val testWindowName = names.mangle("windowTest")
 
-  /**
-   * Default registration for findClass, which works with each registerTypeMapping for the different approaches.
-   *
-   * Sometimes the mapping is fixed for an EP approach, but sometimes it matters when a particular class is requested
-   * in the evolution of the system over time.
-   *
-   * @param dtpe
-   * @param canFindClass
-   * @tparam Ctxt
-   * @return
-   */
-  def domainTypeLookup[Ctxt](dtpe: DataType)(implicit canFindClass: Understands[Ctxt, FindClass[Name, Type]]): Generator[Ctxt, Type] = {
-    FindClass(Seq(names.mangle(names.conceptNameOf(dtpe)))).interpret(canFindClass)
-  }
-
-  /** Provides meaningful default solution to find the base data type in many object-oriented approaches.
-   *
-   * This enables target-language classes to be retrieved from within the code generator in the Method, Class or Constructor contexts.
-   */
-  def registerTypeMapping(tpe: DataType): Generator[ProjectContext, Unit] = {
-    import paradigm.projectCapabilities.addTypeLookupForMethods
-    import ooParadigm.methodBodyCapabilities.canFindClassInMethod // must be present, regardless of IntelliJ
-    import ooParadigm.projectCapabilities.addTypeLookupForClasses
-    import ooParadigm.projectCapabilities.addTypeLookupForConstructors
-    import ooParadigm.classCapabilities.canFindClassInClass // must be present, regardless of IntelliJ
-    import ooParadigm.constructorCapabilities.canFindClassInConstructor // must be present, regardless of IntelliJ
-    val dtpe = TypeRep.DataType(tpe)
-    for {
-      _ <- addTypeLookupForMethods(dtpe, domainTypeLookup(tpe))
-      _ <- addTypeLookupForClasses(dtpe, domainTypeLookup(tpe))
-      _ <- addTypeLookupForConstructors(dtpe, domainTypeLookup(tpe))
-    } yield ()
-  }
 
   def instantiate(baseTpe: DataType, tpeCase: DataTypeCase, args: Expression*): Generator[MethodBodyContext, Expression] = {
     import paradigm.methodBodyCapabilities._
@@ -87,19 +47,153 @@ trait JavaFXApplicationProvider extends BaseProvider {
     import ooParadigm.methodBodyCapabilities._
     import impParadigm.imperativeCapabilities._
     for {
-      _ <- print_message("Inside init() method! Perform necessary initializations here.")
 
-      unitType <- toTargetLanguageType(TypeRep.Unit)
-      _ <- paradigm.methodBodyCapabilities.setReturnType(unitType)
-
+      // Call super
       sp <- superReference()
       init <- getMember(sp, initFuncName)
       result <- apply(init, Seq.empty)
-
       stmt <- liftExpression(result)
       _ <- addBlockDefinitions(Seq(stmt))
 
+      // Print message
+      _ <- print_message("Inside init() method! Perform necessary initializations here.")
+
+      // Make signature
+      unitType <- toTargetLanguageType(TypeRep.Unit)
+      _ <- paradigm.methodBodyCapabilities.setReturnType(unitType)
+
+
     } yield None
+  }
+
+  def make_grid_layout(): Generator[paradigm.MethodBodyContext, paradigm.syntax.Expression] = {
+
+    val layout: GridLayout = domain.layout
+
+    import paradigm.methodBodyCapabilities._
+    import ooParadigm.methodBodyCapabilities._
+    import ooParadigm.classCapabilities.addMethodFromFragment
+    import impParadigm.imperativeCapabilities._
+
+    for {
+
+      unitType <- toTargetLanguageType(TypeRep.Unit)
+      intType <- toTargetLanguageType(TypeRep.Int)
+
+      zero <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, 0)
+      one <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, 1)
+      one_hundred <- paradigm.methodBodyCapabilities.reify(TypeRep.Double, 100)
+
+
+      // Get grid size
+      numRows <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, layout.cols)
+      numCols <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, layout.rows)
+
+      // Constraint object initialization
+      gridPane <- make_class_instantiation(
+        "GridPane",
+        "gridPane",
+        Seq()
+      )
+
+      colConstraints <- make_class_instantiation(
+        "ColumnConstraints",
+        "colConstraints",
+        Seq()
+      )
+
+      percentCols <- ffiArithmetic.arithmeticCapabilities.div(one_hundred, numCols)
+      _ <- make_method_call(
+        colConstraints,
+        "setPercentWidth",
+        Seq(percentCols)
+      )
+
+
+      rowConstraints <- make_class_instantiation(
+        "RowConstraints",
+        "rowConstraints",
+        Seq()
+      )
+
+      percentRows <- ffiArithmetic.arithmeticCapabilities.div(one_hundred, numRows)
+      _ <- make_method_call(
+        rowConstraints,
+        "setPercentHeight",
+        Seq(percentRows)
+      )
+
+      // Row/Col loop -----------------------------
+
+      iName <- freshName(names.mangle("i"))
+      iType <- toTargetLanguageType(TypeRep.Int)
+
+      iVar <- declareVar(iName, iType, Some(zero))
+      compExpr <- ffiArithmetic.arithmeticCapabilities.lt(iVar, numRows)
+
+//      for (int i = 0; i < 3; i ++) {
+//        gridPane.getColumnConstraints().add(colConstraints);
+//        gridPane.getRowConstraints().add(rowConstraints);
+//          for (int j = 0; j < 3; j ++) {
+//          Label label = new Label ("Label " + (i * 3 + j + 1));
+//          label.setMaxSize (Double.MAX_VALUE, Double.MAX_VALUE);
+//          label.setAlignment (Pos.CENTER);
+//          GridPane.setConstraints (label, j, i);
+//          gridPane.getChildren ().add (label);
+//        }
+//    }
+
+
+
+      stmt <- whileLoop(compExpr, for {
+
+          _ <- make_chained_method_call(
+            gridPane,
+            "getColumnConstraints",
+            Seq(),
+            "add",
+            Seq(colConstraints)
+          )
+
+          _ <- make_chained_method_call(
+            gridPane,
+            "getRowConstraints",
+            Seq(),
+            "add",
+            Seq(rowConstraints)
+          )
+
+          jName <- freshName(names.mangle("j"))
+          jType <- toTargetLanguageType(TypeRep.Int)
+          jVar <- declareVar(jName, jType, Some(zero))
+
+          jCompExpr <- ffiArithmetic.arithmeticCapabilities.lt(jVar, numCols)
+
+//          Label label = new Label("Label " + (i * 3 + j + 1));
+//        label.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+//        label.setAlignment(Pos.CENTER);
+//        GridPane.setConstraints(label, j, i);
+//        gridPane.getChildren().add(label);
+
+          innerLoop <- whileLoop(jCompExpr, for {
+
+            _ <- print_message("test")
+
+            } yield ()
+          )
+
+          inc <- ffiArithmetic.arithmeticCapabilities.add(iVar, one)
+          incAssign <- assignVar(iVar, inc)
+
+          _ <- addBlockDefinitions(Seq(innerLoop, incAssign))
+
+        } yield ()
+      )
+      _ <- addBlockDefinitions(Seq(stmt))
+
+
+
+    } yield gridPane
   }
 
   def make_start_func(): Generator[paradigm.MethodBodyContext, Option[paradigm.syntax.Expression]] = {
@@ -108,12 +202,15 @@ trait JavaFXApplicationProvider extends BaseProvider {
       import ooParadigm.classCapabilities.addMethodFromFragment
       import impParadigm.imperativeCapabilities._
 
-
       for {
 
-
+        // Define types and literals
         unitType <- toTargetLanguageType(TypeRep.Unit)
         intType <- toTargetLanguageType(TypeRep.Int)
+
+        zero <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, 0)
+        one <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, 1)
+        one_hundred <- paradigm.methodBodyCapabilities.reify(TypeRep.Double, 100)
 
         // Make signature
         _ <- paradigm.methodBodyCapabilities.setReturnType(unitType)
@@ -122,30 +219,20 @@ trait JavaFXApplicationProvider extends BaseProvider {
         _ <- setParameters(Seq((names.mangle("primaryStage"), stageType)))
         //----
 
-
         args <- getArguments()
         (name, tpe, primaryStage) = args.head
 
-        msg <- paradigm.methodBodyCapabilities.reify(
-          TypeRep.String,
-          "Hello World"
-        )
-
-        labelObj <- make_class_instantiation(
-          "Label",
-          "label",
-          Seq(msg)
-        )
+        gridObj <- make_grid_layout()
 
         sceneObj <- make_class_instantiation(
           "Scene",
           "scene",
-          Seq(labelObj)
+          Seq(gridObj)
         )
 
         title <- paradigm.methodBodyCapabilities.reify(
           TypeRep.String,
-          "Hello World Application"
+          domain.window.title
         )
 
         _ <- make_method_call(
@@ -160,29 +247,6 @@ trait JavaFXApplicationProvider extends BaseProvider {
           Seq(sceneObj)
         )
 
-        posClass <- findRawClass(
-          names.mangle("javafx"),
-          names.mangle("application"),
-          names.mangle("Pos")
-        )
-        imp <- makeRawImport(
-          names.mangle("javafx"),
-          names.mangle("application"),
-          names.mangle("Pos")
-        )
-
-        _ <- addImport(imp)
-
-        posExpr <- toStaticTypeExpression(posClass)
-        posMember <- getMember(posExpr, names.mangle("CENTER"))
-
-        _ <- make_method_call(
-          primaryStage,
-            "setAlignment",
-          Seq(posMember)
-        )
-
-
       } yield None
     }
 
@@ -196,36 +260,40 @@ trait JavaFXApplicationProvider extends BaseProvider {
         intType <- toTargetLanguageType(TypeRep.Int)
         _ <- paradigm.methodBodyCapabilities.setReturnType(intType)
 
-        _ <- print_message("Inside stop() method! Destroy resources. Perform Cleanup.")
-
         // call super.stop()
         sp <- superReference()
-        stopFunc <- getMember(sp, stopFuncName)
-        result <- apply(stopFunc, Seq.empty)
+        init <- getMember(sp, stopFuncName)
+        result <- apply(init, Seq.empty)
 
-      } yield Some(result)
+        stmt <- liftExpression(result)
+        _ <- addBlockDefinitions(Seq(stmt))
+
+        // Print message
+        _ <- print_message("Inside stop() method! Destroy resources. Perform Cleanup.")
+
+      } yield (None)
     }
 
 
-  def make_myfunc_statments(): Generator[paradigm.MethodBodyContext, Unit] = {
-    import paradigm.methodBodyCapabilities._
-    import ooParadigm.methodBodyCapabilities._
-    import impParadigm.imperativeCapabilities._
-    for {
-
-      // Make signatures
-      intType <- toTargetLanguageType(TypeRep.Int)
-      _ <- paradigm.methodBodyCapabilities.setReturnType(intType)
-
-      _ <- print_message("Inside stop() method! Destroy resources. Perform Cleanup.")
-
-      // call super.stop()
-      sp <- superReference()
-      stopFunc <- getMember(sp, stopFuncName)
-      result <- apply(stopFunc, Seq.empty)
-
-    } yield ()
-  }
+//  def make_myfunc_statments(): Generator[paradigm.MethodBodyContext, Unit] = {
+//    import paradigm.methodBodyCapabilities._
+//    import ooParadigm.methodBodyCapabilities._
+//    import impParadigm.imperativeCapabilities._
+//    for {
+//
+//      // Make signatures
+//      intType <- toTargetLanguageType(TypeRep.Int)
+//      _ <- paradigm.methodBodyCapabilities.setReturnType(intType)
+//
+//      _ <- print_message("Inside stop() method! Destroy resources. Perform Cleanup.")
+//
+//      // call super.stop()
+//      sp <- superReference()
+//      stopFunc <- getMember(sp, stopFuncName)
+//      result <- apply(stopFunc, Seq.empty)
+//
+//    } yield ()
+//  }
 
 
   def make_main_func(): Generator[paradigm.MethodBodyContext, Option[Expression]] = {
@@ -243,6 +311,16 @@ trait JavaFXApplicationProvider extends BaseProvider {
         _ <- setParameters(Seq((names.mangle("args"), arrayType)))
         // --------------
 
+
+        args <- getArguments()
+        (name, tpe, funcArgs) = args.head
+        appClass <- findRawClass(names.mangle("Application"))
+        _ <- make_static_method_call(
+          appClass,
+          "launch",
+          Seq(funcArgs)
+        )
+
       } yield None
     }
   def make_class(clazzName: String): Generator[ProjectContext, Unit] = {
@@ -252,73 +330,49 @@ trait JavaFXApplicationProvider extends BaseProvider {
     val makeClass: Generator[ClassContext, Unit] = {
       import classCapabilities._
 
-      val javafx_app_import = Seq(
-        names.mangle("javafx"),
-        names.mangle("application"),
-        names.mangle("Application")
+      val app_import = Seq(
+        names.mangle("Application"),
       )
 
       for {
+
         exceptionClass <- findRawClass(names.mangle("Exception"))
-        pt <- findClass(javafx_app_import : _ *)
-
-
-//
-//        _ <- addMethodFromFragment(
-//          templates.java.FragmentTest.render(
-//            "test1",
-//            "test2"
-//          ).body
-//        )
-
+        pt <- findRawClass(app_import : _ *)
         _ <- resolveAndAddImport(pt)
         _ <- addParent(pt)
-        myMethod <- addMethod(initFuncName, make_init(),true, Seq(exceptionClass))
+        _ <- addMethod(initFuncName, make_init(),true, Seq(exceptionClass))
         _ <- addMethod(startFuncName, make_start_func())
-        //_ <- addMethod(stopFuncName, make_stop_func(), true, Seq(exceptionClass))
+        _ <- addMethod(stopFuncName, make_stop_func(), true, Seq(exceptionClass))
         _ <- addMethod(mainFuncName, make_main_func())
       } yield ()
     }
 
     for {
 
-        _ <- addClassToProject(make_class_template, names.mangle("Test"))
         _ <- addClassToProject(makeClass, names.mangle(clazzName))
 
     } yield ()
 
   }
 
-  def make_class_template() : Generator[ClassContext, Unit] = {
+//  def make_class_template() : Generator[ClassContext, Unit] = {
+//
+//    import templating.templatingCapabilities._
+//
+//    for {
+//
+//      _ <- loadFragment(this.getClass.getResource("/GUI/JavaFX_Target/Fragment1.java"))
+//
+//      templateVar1 <- getTemplateVar[Unit](
+//        "MyFuncStmts"
+//      )
+//
+//      _ <- replace[Unit](templateVar1, make_myfunc_statments())
+//
+//    } yield ()
+//
+//  }
 
-    import templating.templatingCapabilities._
-
-    for {
-
-      _ <- loadFragment(this.getClass.getResource("/Fragment1.java"))
-
-      templateVar1 <- getTemplateVar[Unit](
-        "MyFuncStmts"
-      )
-
-      _ <- replace[Unit](templateVar1, make_myfunc_statments())
-    } yield ()
-
-  }
-
-  def make_window_test(): Generator[paradigm.MethodBodyContext, Seq[paradigm.syntax.Expression]] = {
-    import paradigm.methodBodyCapabilities._
-    import ffiEquality.equalityCapabilities._
-    for {
-      two <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, 42)
-    } yield Seq(two)
-  }
-
-  def make_test() : Generator[paradigm.TestContext, Unit] = {
-    for {
-      _ <- paradigm.testCapabilities.addTestCase(make_window_test(), testWindowName)
-    } yield ()
-  }
 
   def implement(): Generator[paradigm.ProjectContext, Unit] = {
     for {
@@ -346,12 +400,14 @@ object JavaFXApplicationProvider {
    ffiassert: Assertions.WithBase[base.MethodBodyContext, base.type],
    ffiequal: Equality.WithBase[base.MethodBodyContext, base.type],
   )
-  (_templating: Templating.WithBase[oo.ClassContext, base.MethodBodyContext, base.type])
+  (_templating: Templating.WithBase[oo.ClassContext, base.MethodBodyContext, base.type])(
+    _domain: GUIDomain
+  )
 : JavaFXApplicationProvider.WithParadigm[base.type] =
     new JavaFXApplicationProvider {
       override val paradigm: base.type = base
       val impParadigm: imp.type = imp
-      //val impConstructorParadigm: impConstructor.type = impConstructor
+      override val domain: GUIDomain = _domain
       override val names: NameProvider[paradigm.syntax.Name] = nameProvider
       override val ooParadigm: oo.type = oo
       override val console: Console.WithBase[base.MethodBodyContext, paradigm.type] = con

@@ -12,16 +12,6 @@ import org.combinators.ep.generator.paradigm.{AnyParadigm, FindClass, ObjectOrie
 
 
 trait VulkanApplicationProvider extends BaseProvider {
-  val ooParadigm: ObjectOriented.WithBase[paradigm.type]
-  val impParadigm: Imperative.WithBase[paradigm.MethodBodyContext,paradigm.type]
-  val names: NameProvider[paradigm.syntax.Name]
-  val ffiArithmetic: Arithmetic.WithBase[paradigm.MethodBodyContext, paradigm.type, Int]
-  val ffiAssertions : Assertions.WithBase[paradigm.MethodBodyContext, paradigm.type]
-  val ffiEquality : Equality.WithBase[paradigm.MethodBodyContext, paradigm.type]
-  val console: Console.WithBase[paradigm.MethodBodyContext, paradigm.type]
-  val array: Arrays.WithBase[paradigm.MethodBodyContext, paradigm.type]
-  val asserts: Assertions.WithBase[paradigm.MethodBodyContext, paradigm.type]
-  val eqls: Equality.WithBase[paradigm.MethodBodyContext, paradigm.type]
 
   import paradigm._
   import syntax._
@@ -34,39 +24,6 @@ trait VulkanApplicationProvider extends BaseProvider {
   lazy val testWindowName = names.mangle("windowTest")
 
 
-  /**
-   * Default registration for findClass, which works with each registerTypeMapping for the different approaches.
-   *
-   * Sometimes the mapping is fixed for an EP approach, but sometimes it matters when a particular class is requested
-   * in the evolution of the system over time.
-   *
-   * @param dtpe
-   * @param canFindClass
-   * @tparam Ctxt
-   * @return
-   */
-  def domainTypeLookup[Ctxt](dtpe: DataType)(implicit canFindClass: Understands[Ctxt, FindClass[Name, Type]]): Generator[Ctxt, Type] = {
-    FindClass(Seq(names.mangle(names.conceptNameOf(dtpe)))).interpret(canFindClass)
-  }
-
-  /** Provides meaningful default solution to find the base data type in many object-oriented approaches.
-   *
-   * This enables target-language classes to be retrieved from within the code generator in the Method, Class or Constructor contexts.
-   */
-  def registerTypeMapping(tpe: DataType): Generator[ProjectContext, Unit] = {
-    import paradigm.projectCapabilities.addTypeLookupForMethods
-    import ooParadigm.methodBodyCapabilities.canFindClassInMethod // must be present, regardless of IntelliJ
-    import ooParadigm.projectCapabilities.addTypeLookupForClasses
-    import ooParadigm.projectCapabilities.addTypeLookupForConstructors
-    import ooParadigm.classCapabilities.canFindClassInClass // must be present, regardless of IntelliJ
-    import ooParadigm.constructorCapabilities.canFindClassInConstructor // must be present, regardless of IntelliJ
-    val dtpe = TypeRep.DataType(tpe)
-    for {
-      _ <- addTypeLookupForMethods(dtpe, domainTypeLookup(tpe))
-      _ <- addTypeLookupForClasses(dtpe, domainTypeLookup(tpe))
-      _ <- addTypeLookupForConstructors(dtpe, domainTypeLookup(tpe))
-    } yield ()
-  }
 
   def instantiate(baseTpe: DataType, tpeCase: DataTypeCase, args: Expression*): Generator[MethodBodyContext, Expression] = {
     import paradigm.methodBodyCapabilities._

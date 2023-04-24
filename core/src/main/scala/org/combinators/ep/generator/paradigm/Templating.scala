@@ -54,7 +54,9 @@ trait Templating[OuterContext, InnerContext] {
 
     implicit def canGetTemplateVar[T]: Understands[OuterContext, GetTemplateVar[InnerContext, OuterContext, T]]
     def getTemplateVar[T](templateVar: String): Generator[OuterContext, TemplateVar[InnerContext, OuterContext, T]] = {
-      AnyParadigm.capability(GetTemplateVar[InnerContext, OuterContext, T](templateVar))
+      AnyParadigm.capability(GetTemplateVar[InnerContext, OuterContext, T](
+        s"@COGEN<$templateVar>"
+      ))
     }
 
 
