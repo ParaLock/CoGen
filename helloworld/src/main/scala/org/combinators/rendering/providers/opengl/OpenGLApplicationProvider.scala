@@ -83,7 +83,12 @@ trait OpenGLApplicationProvider extends BaseProvider {
 
   def implement(): Generator[paradigm.ProjectContext, Unit] = {
     for {
+
+
+
       _ <- make_class("OpenGLApplication")
+
+
     } yield ()
   }
 

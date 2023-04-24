@@ -40,7 +40,10 @@ class VulkanApplicationMain {
     generator.equalityInMethod,
     generator.intsInMethod,
     generator.assertionsInMethod,
-    generator.equalityInMethod
+    generator.equalityInMethod,
+  )(
+    generator.templatingMethodInClass,
+    generator.templatingMethodInUnit
   )
 
 

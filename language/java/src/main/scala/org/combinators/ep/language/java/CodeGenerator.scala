@@ -27,6 +27,11 @@ sealed class CodeGenerator(config: Config) { cc =>
   val templatingMethodInClass: Templating.WithBase[ooParadigm.ClassContext, paradigm.MethodBodyContext, paradigm.type] =
     new TemplatingMethodInClass[paradigm.type] {val base = paradigm}
 
+  val templatingMethodInUnit: Templating.WithBase[paradigm.CompilationUnitContext, paradigm.MethodBodyContext, paradigm.type] =
+    new TemplatingMethodInCompilationUnit[paradigm.type] {
+      val base = paradigm
+    }
+
   val booleansInMethod = new Booleans[MethodBodyCtxt, paradigm.type](paradigm)
   val booleansInConstructor = new Booleans[MethodBodyCtxt, paradigm.type](paradigm)
 

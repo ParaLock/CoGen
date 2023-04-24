@@ -62,8 +62,6 @@ public class TriangleMain {
         private static final Set<String> DEVICE_EXTENSIONS = Stream.of(VK_KHR_SWAPCHAIN_EXTENSION_NAME)
                 .collect(toSet());
 
-
-
         private static int debugCallback(int messageSeverity, int messageType, long pCallbackData, long pUserData) {
 
             VkDebugUtilsMessengerCallbackDataEXT callbackData = VkDebugUtilsMessengerCallbackDataEXT.create(pCallbackData);

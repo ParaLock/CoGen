@@ -299,6 +299,8 @@ trait BaseProvider {
   /** Returns code to instantiate the given data type case, filling in `args` for its parameters. */
   def instantiate(baseTpe: DataType, tpeCase: DataTypeCase, args: Expression*): Generator[MethodBodyContext, Expression]
 
+
+
   /** Returns code to instantiate the given Scala model of a domain specific type. */
   def instantiate(baseType: DataType, inst: DataTypeInstance): Generator[MethodBodyContext, Expression] = {
     for {
