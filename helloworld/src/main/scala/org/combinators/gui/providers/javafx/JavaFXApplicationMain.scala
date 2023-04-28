@@ -6,7 +6,7 @@ import cats.effect.{ExitCode, IO, IOApp}
 import com.github.javaparser.ast.PackageDeclaration
 import org.apache.commons.io.FileUtils
 import org.combinators.ep.generator.FileWithPathPersistable._
-import org.combinators.ep.generator.{FileWithPath, FileWithPathPersistable}
+import org.combinators.ep.generator.{Features, FileWithPath, FileWithPathPersistable}
 import org.combinators.ep.language.java.paradigm.ObjectOriented
 import org.combinators.ep.language.java.{CodeGenerator, JavaNameProvider, PartiallyBoxed, Syntax}
 import org.combinators.graphics.GUIDomain
@@ -27,6 +27,8 @@ class JavaFXApplicationMain {
     )
   )
 
+
+
   val appApproach = JavaFXApplicationProvider[
     Syntax.default.type,
     generator.paradigm.type
@@ -44,10 +46,11 @@ class JavaFXApplicationMain {
     generator.assertionsInMethod,
     generator.equalityInMethod
   )(
-    generator.templatingMethodInClass
+    generator.templatingMethodInClass,
+    generator.templatingMethodInUnit
   )(
     new GUIDomain()
-  )
+  )(generator.imperativeInConstructor)
 
 
   val persistable = FileWithPathPersistable[FileWithPath]
@@ -66,7 +69,7 @@ class JavaFXApplicationMain {
           _ <- generator.doublesInMethod.enable()
           _ <- generator.intsInMethod.enable()
           _ <- generator.stringsInMethod.enable()
-          _ <- generator.listsInMethod.enable() // should be array, but this still needs to be added as an FFI
+          _ <- generator.listsInMethod.enable()
           _ <- generator.consoleInMethod.enable()
           _ <- generator.arraysInMethod.enable()
           _ <- generator.equalityInMethod.enable()

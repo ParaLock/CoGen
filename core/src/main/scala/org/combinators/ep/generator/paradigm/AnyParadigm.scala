@@ -268,5 +268,8 @@ object AnyParadigm {
   object syntax {
     def forEach[T, Ctxt, R](xs: Seq[T])(run: T => Generator[Ctxt, R]): Generator[Ctxt, List[R]] =
       xs.toList.map(run).sequence
+
+    def forEachWithIndex[T, Ctxt, R](xs: Seq[T])(run: (T, Int) => Generator[Ctxt, R]): Generator[Ctxt, List[R]] =
+      xs.toList.zipWithIndex.map { case (value, index) => run(value, index) }.sequence
   }
 }

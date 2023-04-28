@@ -4,7 +4,7 @@ import org.combinators.ep.generator.Command.Generator
 import org.combinators.ep.generator.Understands
 import org.combinators.ep.generator.paradigm.{AnyParadigm, Apply, ParametricPolymorphism}
 
-case class CreateArray[Type](elementType: Type)
+case class CreateArray[Type](elementType: Type, dimension: Option[Int])
 case class Get()
 case class Set()
 case class Length()
@@ -15,8 +15,8 @@ trait Arrays[Context] extends FFI {
 
   trait ArrayCapabilities {
     implicit val canCreate: Understands[Context, Apply[CreateArray[Type], Expression, Expression]]
-    def create(elemTpe: Type, contents: Seq[Expression]): Generator[Context, Expression] =
-      AnyParadigm.capability(Apply[CreateArray[Type], Expression, Expression](CreateArray(elemTpe), contents))
+    def create(elemTpe: Type, contents: Seq[Expression], dim:Option[Int]): Generator[Context, Expression] =
+      AnyParadigm.capability(Apply[CreateArray[Type], Expression, Expression](CreateArray(elemTpe, dim), contents))
 
     implicit val canGet: Understands[Context, Apply[Get, Expression, Expression]]
     def get(array: Expression, pos:Expression): Generator[Context, Expression] =

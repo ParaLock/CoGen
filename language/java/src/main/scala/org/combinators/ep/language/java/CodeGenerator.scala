@@ -5,11 +5,11 @@ import com.github.javaparser.ast.PackageDeclaration
 import com.github.javaparser.ast.`type`.PrimitiveType
 import com.github.javaparser.ast.expr.{DoubleLiteralExpr, IntegerLiteralExpr, TypeExpr}
 import org.combinators.ep.domain.abstractions.TypeRep
-import org.combinators.ep.generator.Command
+import org.combinators.ep.generator.{Command, NameProvider}
 import org.combinators.ep.generator.paradigm.Templating
 import org.combinators.ep.language.java.paradigm._
 import org.combinators.ep.language.java.paradigm.ffi._
-
+import org.combinators.ep.generator.Features
 
 /**
  * Java-specific.
@@ -158,6 +158,28 @@ sealed class CodeGenerator(config: Config) { cc =>
 
   val assertionsInMethod = new Assertions[paradigm.type](paradigm)(ooParadigm)
   val exceptionsInMethod = new Exceptions[paradigm.type](paradigm)
+
+  def getFeatures(): Features = {
+
+    Features[
+      Syntax.default.type,
+      paradigm.type
+    ](
+      paradigm
+    )(
+      JavaNameProvider,
+      imperativeInMethod,
+      ooParadigm,
+      consoleInMethod,
+      arraysInMethod,
+      assertionsInMethod,
+      equalityInMethod,
+      intsInMethod,
+      assertionsInMethod,
+      equalityInMethod
+    )
+  }
+
 }
 
 object CodeGenerator {

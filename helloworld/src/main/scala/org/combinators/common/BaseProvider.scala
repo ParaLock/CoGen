@@ -87,7 +87,7 @@ trait BaseProvider {
   def make_class_instantiation_floating(
                                 typeName: String,
                                 constructorParams: Seq[Expression],
-                                addInline: Boolean
+                                addInline: Boolean = false
                               ): Generator[MethodBodyContext, paradigm.syntax.Expression] = {
     import impParadigm.imperativeCapabilities._
     import ooParadigm.methodBodyCapabilities._
@@ -127,7 +127,7 @@ trait BaseProvider {
     import paradigm.methodBodyCapabilities._
 
     for {
-      classType <- findClass(names.mangle(typeName))
+      classType <- findRawClass(names.mangle(typeName))
       _ <- resolveAndAddImport(classType)
       classObj <- instantiateObject(classType, constructorParams)
       classObjName <- freshName(names.mangle(varName))

@@ -1,6 +1,7 @@
 package org.combinators.ep.language.java.paradigm.ffi    /*DI:LD:AI*/
 
 import com.github.javaparser.ast.`type`.ArrayType
+import com.github.javaparser.ast.body.VariableDeclarator
 import com.github.javaparser.ast.expr.{ArrayAccessExpr, ArrayCreationExpr, ArrayInitializerExpr, AssignExpr, FieldAccessExpr, IntegerLiteralExpr, MethodCallExpr, NameExpr, SimpleName}
 import com.github.javaparser.ast.{ArrayCreationLevel, ImportDeclaration, NodeList}
 import org.combinators.ep.domain.abstractions.TypeRep
@@ -23,12 +24,25 @@ class Arrays[Ctxt, AP <: AnyParadigm](val base:AP) extends Arrs[Ctxt] {
       def perform(
                    context: Ctxt,
                    command: Apply[CreateArray[Type], Expression, Expression]
-                 ): (Ctxt, Expression) =
+                 ): (Ctxt, Expression) = {
+
+        var dim = new ArrayCreationLevel(null)
+        if(command.functional.dimension.isDefined) {
+          dim = new ArrayCreationLevel(command.functional.dimension.get)
+        }
+
+        var initializer: ArrayInitializerExpr = null;
+        if(command.arguments.length > 0) {
+          initializer = new ArrayInitializerExpr(new NodeList(command.arguments: _ *))
+        }
+
         (context,
           new ArrayCreationExpr(command.functional.elementType,
-            new NodeList(new ArrayCreationLevel(1)),
-            new ArrayInitializerExpr(new NodeList(command.arguments: _ *)))
+            new NodeList(dim),
+            initializer
+          )
         )
+      }
     }
 
   val arrayCapabilities: ArrayCapabilities =
@@ -100,7 +114,7 @@ class Arrays[Ctxt, AP <: AnyParadigm](val base:AP) extends Arrs[Ctxt] {
                       projectReification(k)(InstanceRep(elemTypeRep)(elem))
                     }
                     elemType <- projectResolution(k)(elemTypeRep)
-                    res <- Apply[CreateArray[Type], Expression, Expression](CreateArray(elemType), elems).interpret(canCreateArray)
+                    res <- Apply[CreateArray[Type], Expression, Expression](CreateArray(elemType, None), elems).interpret(canCreateArray)
                   } yield res
                 case _ => reify(k)(rep)
               }
