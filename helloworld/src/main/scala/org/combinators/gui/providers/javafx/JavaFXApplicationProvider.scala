@@ -258,11 +258,6 @@ trait JavaFXApplicationProvider extends BaseProvider {
 
         // Define types and literals
         unitType <- toTargetLanguageType(TypeRep.Unit)
-        intType <- toTargetLanguageType(TypeRep.Int)
-
-        zero <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, 0)
-        one <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, 1)
-        one_hundred <- paradigm.methodBodyCapabilities.reify(TypeRep.Double, 100)
 
         // Make signature
         _ <- paradigm.methodBodyCapabilities.setReturnType(unitType)
@@ -499,24 +494,33 @@ trait JavaFXApplicationProvider extends BaseProvider {
       } yield ()
     }
 
-//    val makeUnit: Generator[CompilationUnitContext, Unit] = {
-//
-//      for {
-//        _ <- unitTemplating.templatingCapabilities.loadFragment(
-//          this.getClass.getResource("/GUI/Target_JavaFX/Imports.java")
-//        )
-//        _ <- makeClass
-//      } yield()
-//    }
+    val makeUnit: Generator[CompilationUnitContext, Unit] = {
+
+      for {
+
+        _ <- unitTemplating.templatingCapabilities.loadFragment(
+          this.getClass.getResource("/GUI/Target_JavaFX/Imports.java")
+        )
+
+        _ <- ooParadigm.compilationUnitCapabilities.addClass(
+          names.mangle("JavaFXApplication"),
+          makeClass
+        )
+
+
+      } yield()
+    }
 
     for {
 
-      _ <- addClassToProject(make_text_element_class, names.mangle("TextElement"))
+      _ <- addClassToProject(
+        make_text_element_class,
+        names.mangle("TextElement")
+      )
 
-//      _ <- paradigm.addCompilationUnit(
-//        makeUnit, names.mangle("BasicJavaApplication")
-//      )
-      _ <- addClassToProject(makeClass, names.mangle(clazzName))
+      _ <- paradigm.projectCapabilities.addCompilationUnit(
+        makeUnit
+      )
 
     } yield ()
 

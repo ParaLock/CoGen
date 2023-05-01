@@ -98,6 +98,10 @@ trait TemplatingMethodInCompilationUnit[AP <: AnyParadigm] extends TP[Compilatio
 
         val compUnit = StaticJavaParser.parse(sourceStr)
 
+        val tgtPackage = config.targetPackage.clone
+
+        compUnit.setPackageDeclaration(tgtPackage)
+
         (context.copy(unit=compUnit),())
       }
     }

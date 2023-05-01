@@ -1,8 +1,9 @@
 package org.combinators.ep.language.java     /*DI:LD:AI*/
 
+import com.github.javaparser.{JavaParser, StaticJavaParser}
 import com.github.javaparser.ast.{CompilationUnit, ImportDeclaration, Node, NodeList, PackageDeclaration}
 import com.github.javaparser.ast.`type`.{ClassOrInterfaceType, Type}
-import com.github.javaparser.ast.expr.{Name, SimpleName}
+import com.github.javaparser.ast.expr.{Name, ObjectCreationExpr, SimpleName}
 import com.github.javaparser.ast.visitor.Visitable
 
 class ImportCleanup {
@@ -105,18 +106,32 @@ class ImportCleanup {
 
     override def visit(name: Name, phase: Phase): Visitable = {
       phase match {
-        case ANALYZE =>
+        case ANALYZE => {
           usageAnalyzer = usageAnalyzer.use(name)
           name
+        }
         case CLEANUP =>
           usageAnalyzer.simplify(name)
       }
     }
     override def visit(name: SimpleName, phase: Phase): Visitable = {
       phase match {
-        case ANALYZE =>
+        case ANALYZE => {
+          println(new Name(name.getIdentifier))
           usageAnalyzer = usageAnalyzer.use(new Name(name.getIdentifier))
           name
+        }
+        case _ => name
+      }
+    }
+
+    override def visit(name: ObjectCreationExpr, phase: Phase): Visitable = {
+      phase match {
+        case ANALYZE => {
+          println(new Name(name.getType().getNameAsString))
+          usageAnalyzer = usageAnalyzer.use(new Name(name.getType().getNameAsString))
+          name
+        }
         case _ => name
       }
     }
@@ -128,6 +143,9 @@ class ImportCleanup {
           } else {
             null
           }
+        case ANALYZE => {
+          importDecl
+        }
         case _ => importDecl
       }
     }
