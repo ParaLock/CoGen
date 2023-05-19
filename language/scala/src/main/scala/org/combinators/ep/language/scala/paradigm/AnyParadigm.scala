@@ -27,6 +27,10 @@ trait AnyParadigm extends AP {
 
   val projectCapabilities: ProjectCapabilities =
     new ProjectCapabilities {
+
+      implicit val canRegisterImportForNameInProject: Understands[ProjectContext, RegisterImportForName] = ???
+
+
       implicit val canDebugInProject: Understands[ProjectCtxt, Debug] =
         new Understands[ProjectCtxt, Debug] {
           def perform(

@@ -44,7 +44,6 @@ trait JavaFXApplicationProvider extends BaseProvider {
     for {
       rt <- findClass(names.mangle(names.conceptNameOf(tpeCase)))
       _ <- resolveAndAddImport(rt)
-
       res <- instantiateObject(rt, args)
     } yield res
   }
@@ -195,7 +194,8 @@ trait JavaFXApplicationProvider extends BaseProvider {
             doubleClassExpr <- toStaticTypeExpression(doubleClass)
             maxVal <- getMember(doubleClassExpr, names.mangle("MAX_VALUE"))
 
-            posClass <- findRawClass(names.mangle("Pos"))
+            posClass <- findClass(names.mangle("Pos"))
+            _ <- resolveAndAddImport(posClass)
             posClassExpr <- toStaticTypeExpression(posClass)
             posCenter <- getMember(posClassExpr, names.mangle("CENTER"))
 
@@ -388,6 +388,8 @@ trait JavaFXApplicationProvider extends BaseProvider {
   def make_init_data_stmts(): Generator[MethodBodyContext, Option[Expression]] = {
 
     import array.arrayCapabilities._
+    import paradigm.methodBodyCapabilities._
+    import ooParadigm.methodBodyCapabilities._
 
     val layout: GridLayout = domain.layout
 
@@ -397,6 +399,9 @@ trait JavaFXApplicationProvider extends BaseProvider {
       elementType <- ooParadigm.methodBodyCapabilities.findClass(
         names.mangle("TextElement")
       )
+
+      _ <- resolveAndAddImport(elementType)
+
 
       self <- ooParadigm.methodBodyCapabilities.selfReference()
 
@@ -464,10 +469,13 @@ trait JavaFXApplicationProvider extends BaseProvider {
         _ <- setParameters(Seq((names.mangle("args"), arrayType)))
         // --------------
 
-
         args <- getArguments()
         (name, tpe, funcArgs) = args.head
-        appClass <- findRawClass(names.mangle("Application"))
+
+        appClass <- findClass(names.mangle("Application"))
+
+        _ <- resolveAndAddImport(appClass)
+
         _ <- make_static_method_call(
           appClass,
           "launch",
@@ -484,9 +492,11 @@ trait JavaFXApplicationProvider extends BaseProvider {
       import classCapabilities._
 
       for {
-        exceptionClass <- findRawClass(names.mangle("Exception"))
-        pt <- findRawClass(names.mangle("Application"))
-        _ <- addParent(pt)
+
+        appClass <- findClass(names.mangle("Application"))
+        exceptionClass <- findClass(names.mangle("Exception"))
+
+        _ <- addParent(appClass)
         _ <- addMethod(initFuncName, make_init(),true, Seq(exceptionClass))
         _ <- addMethod(startFuncName, make_start_func())
         _ <- addMethod(stopFuncName, make_stop_func(), true, Seq(exceptionClass))
@@ -497,23 +507,17 @@ trait JavaFXApplicationProvider extends BaseProvider {
     val makeUnit: Generator[CompilationUnitContext, Unit] = {
 
       for {
-
-        _ <- unitTemplating.templatingCapabilities.loadFragment(
-          this.getClass.getResource("/GUI/Target_JavaFX/Imports.java")
-        )
-
         _ <- ooParadigm.compilationUnitCapabilities.addClass(
           names.mangle("JavaFXApplication"),
           makeClass
         )
-
 
       } yield()
     }
 
     for {
 
-      _ <- addClassToProject(
+      textElementClass <- addClassToProject(
         make_text_element_class,
         names.mangle("TextElement")
       )
@@ -526,8 +530,43 @@ trait JavaFXApplicationProvider extends BaseProvider {
 
   }
 
-  def implement(): Generator[paradigm.ProjectContext, Unit] = {
+  def register_imports():  Generator[paradigm.ProjectContext, Unit] = {
+    import paradigm.projectCapabilities._
+
+    val importsList = Seq[Seq[String]](
+      Seq("javafx_basic_application", "TextElement"),
+      Seq("javafx", "application", "Application"),
+      Seq("javafx", "scene", "Scene"),
+      Seq("javafx", "geometry", "Pos"),
+      Seq("javafx", "scene", "control", "Label"),
+      Seq("javafx", "scene", "layout", "ColumnConstraints"),
+      Seq("javafx", "scene", "layout", "GridPane"),
+      Seq("javafx", "scene", "layout", "RowConstraints"),
+      Seq("javafx", "stage", "Stage"),
+    )
+
     for {
+
+      _ <- forEach(importsList) { (elem: Seq[String]) =>
+        for {
+          _ <- registerImportForName(
+            elem.last,
+            elem
+          )
+        } yield ()
+      }
+
+    } yield ()
+  }
+
+  def implement(): Generator[paradigm.ProjectContext, Unit] = {
+    import paradigm.projectCapabilities._
+    import ooParadigm.classCapabilities._
+    for {
+
+      _ <- register_imports()
+
+
       _ <- make_application_class("JavaFXBasicApplication")
     } yield ()
   }
@@ -554,7 +593,7 @@ object JavaFXApplicationProvider {
   )
   (
     _classTemplating: Templating.WithBase[oo.ClassContext, base.MethodBodyContext, base.type],
-    _unitTemplating: Templating.WithBase[base.CompilationUnitContext, base.MethodBodyContext, base.type]
+    _unitTemplating: Templating.WithBase[base.CompilationUnitContext, base.MethodBodyContext, base.type],
   )(
     _domain: GUIDomain
   )(impConstructor: Imperative.WithBase[oo.ConstructorContext, base.type])

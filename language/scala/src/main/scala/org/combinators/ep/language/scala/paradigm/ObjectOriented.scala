@@ -71,7 +71,6 @@ trait ObjectOriented[AP <: AnyParadigm] extends OO {
     new ClassCapabilities {
 
       implicit val canAddMethodFromFragmentInClass: Understands[ClassContext, AddFragment] = ???
-
       implicit val canDebugInClass: Understands[ClassCtxt, Debug] =
         new Understands[ClassCtxt, Debug] {
           def perform(context: ClassCtxt, command: Debug): (ClassCtxt, Unit) = {

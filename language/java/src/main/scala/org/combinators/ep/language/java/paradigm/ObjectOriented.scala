@@ -31,12 +31,14 @@ trait ObjectOriented[AP <: AnyParadigm] extends OO {
 
   val compilationUnitCapabilities: CompilationUnitCapabilities =
     new CompilationUnitCapabilities {
+
       implicit val canAddClassInCompilationUnit: Understands[base.CompilationUnitContext, AddClass[ClassContext, Name]] =
         new Understands[base.CompilationUnitContext, AddClass[ClassContext, Name]] {
           def perform(
             context: base.CompilationUnitContext,
             command: AddClass[ClassContext, Name]
           ): (base.CompilationUnitContext, Unit) = {
+
             val clsToAdd = new ClassOrInterfaceDeclaration()
             clsToAdd.setName(command.name.toAST)
             clsToAdd.setPublic(true)
@@ -45,13 +47,17 @@ trait ObjectOriented[AP <: AnyParadigm] extends OO {
                 command.cls,
                 ClassCtxt(context.resolver, clsToAdd, context.unit.getImports().asScala)
               )
+
             val newUnit = context.unit.clone()
             newUnit.addType(resultCtxt.cls)
-            resultCtxt.extraImports.foreach { imp =>
-              if (!newUnit.getImports.contains(imp) && imp.getName.getIdentifier != command.name.toAST.getIdentifier) {
-                newUnit.addImport(imp.clone())
+
+            resultCtxt.extraImports.foreach { imp => {
+                if (!newUnit.getImports.contains(imp) && imp.getName.getIdentifier != command.name.toAST.getIdentifier) {
+                  newUnit.addImport(imp.clone())
+                }
               }
             }
+
             newUnit.getImports.sort((i1, i2) => i1.toString.compareTo(i2.toString))
             (context.copy(resolver = resultCtxt.resolver, unit = newUnit), ())
           }
@@ -223,6 +229,7 @@ trait ObjectOriented[AP <: AnyParadigm] extends OO {
                 command.spec,
                 MethodBodyCtxt(context.resolver, context.extraImports, methodToAdd)
               )
+
             val resultingMethod = methodCtxt.method.clone()
             if (returnExp.isDefined && !resultingMethod.getType.isVoidType) {
               val body = resultingMethod.getBody.orElseGet(() => new BlockStmt())
@@ -281,11 +288,9 @@ trait ObjectOriented[AP <: AnyParadigm] extends OO {
           ): (ClassContext, Option[Import]) = {
             val stripped = AnyParadigm.stripGenerics(command.forElem)
             Try { (context, context.resolver.importResolution(stripped)) } getOrElse {
-              val newImport =
-                new ImportDeclaration(
-                  ObjectOriented.typeToName(stripped.asClassOrInterfaceType()),
-                  false,
-                  false)
+
+              val newImport = AnyParadigm.resolveRegisteredImport(command.forElem)
+
               if (context.extraImports.contains(newImport)) {
                 (context, None)
               } else {

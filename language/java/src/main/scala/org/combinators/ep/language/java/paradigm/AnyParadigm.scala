@@ -8,11 +8,13 @@ import com.github.javaparser.ast.body.{ClassOrInterfaceDeclaration, MethodDeclar
 import com.github.javaparser.ast.expr.{MethodCallExpr, NameExpr, NullLiteralExpr}
 import com.github.javaparser.ast.nodeTypes.{NodeWithScope, NodeWithSimpleName}
 import com.github.javaparser.ast.stmt.{BlockStmt, ExpressionStmt}
+import com.github.javaparser.ast.expr.{Name => JName}
 import org.combinators.ep.domain.abstractions.TypeRep
 import org.combinators.ep.domain.instances.InstanceRep
 import org.combinators.ep.generator.Command.Generator
 import org.combinators.ep.generator.{Command, FileWithPath, Understands}
 import org.combinators.ep.generator.paradigm.{AnyParadigm => AP, _}
+import org.combinators.ep.language.java.ContextSpecificResolver.ImportInfo
 import org.combinators.ep.language.java.Syntax.MangledName
 import org.combinators.ep.language.java.{CodeGenerator, CompilationUnitCtxt, Config, ContextSpecificResolver, FreshNameCleanup, ImportCleanup, JavaNameProvider, MethodBodyCtxt, ProjectCtxt, Syntax, TestCtxt}
 import org.combinators.templating.persistable.{BundledResource, JavaPersistable}
@@ -34,6 +36,23 @@ trait AnyParadigm extends AP {
 
   val projectCapabilities: ProjectCapabilities =
     new ProjectCapabilities {
+
+      val canRegisterImportForNameInProject: Understands[ProjectContext, RegisterImportForName] =
+        new Understands[ProjectContext, RegisterImportForName] {
+          def perform(
+                       context: ProjectContext,
+                       command: RegisterImportForName
+                     ): (ProjectContext, Unit) = {
+
+              ContextSpecificResolver.importsByTypeName += (
+                command.name -> ImportInfo(command.importList, command.importAll)
+              )
+
+            (context, ())
+          }
+        }
+
+
       implicit val canDebugInProject: Understands[ProjectCtxt, Debug] =
         new Understands[ProjectCtxt, Debug] {
           def perform(
@@ -176,6 +195,7 @@ trait AnyParadigm extends AP {
 
   val methodBodyCapabilities: MethodBodyCapabilities =
     new MethodBodyCapabilities {
+
       implicit val canDebugInMethodBody: Understands[MethodBodyCtxt, Debug] =
         new Understands[MethodBodyCtxt, Debug] {
           def perform(
@@ -316,12 +336,7 @@ trait AnyParadigm extends AP {
             val stripped = AnyParadigm.stripGenerics(command.forElem)
             Try { (context, context.resolver.importResolution(stripped)) } getOrElse {
               if (stripped.isClassOrInterfaceType) {
-                val importName = ObjectOriented.typeToName(stripped.asClassOrInterfaceType())
-                val newImport =
-                  new ImportDeclaration(
-                    importName,
-                    false,
-                    false)
+                val newImport = AnyParadigm.resolveRegisteredImport(command.forElem)
                 if (context.extraImports.contains(newImport)) {
                   (context, None)
                 } else {
@@ -516,8 +531,9 @@ trait AnyParadigm extends AP {
       s"""
          |addSbtPlugin("com.github.sbt" % "sbt-jacoco" % "3.0.3")
          """.stripMargin
+
     val cleanedUnits =
-     ImportCleanup.cleaned(
+      ImportCleanup.cleaned(
         FreshNameCleanup.cleaned(finalContext.resolver.generatedVariables, finalContext.units: _*) : _*
      )
     val cleanedTestUnits =
@@ -552,6 +568,28 @@ trait AnyParadigm extends AP {
 }
 
 object AnyParadigm {
+
+  def resolveRegisteredImport(elem: com.github.javaparser.ast.`type`.Type): ImportDeclaration = {
+
+    val stripped = AnyParadigm.stripGenerics(elem)
+    var importName = ObjectOriented.typeToName(stripped.asClassOrInterfaceType())
+    val identifier = importName.getIdentifier
+    var importAll = false
+
+    if (ContextSpecificResolver.importsByTypeName.contains(identifier)) {
+      val importInfo = ContextSpecificResolver.importsByTypeName.get(identifier).get
+      val clsName = importInfo.importList.last
+      val qualifier = new JName(importInfo.importList.dropRight(1).mkString("."))
+      importName = new JName(qualifier, clsName)
+      importAll = importInfo.importAll
+    }
+
+    new ImportDeclaration(
+      importName,
+      false,
+      importAll)
+  }
+
   def stripGenerics(tpe: com.github.javaparser.ast.`type`.Type): com.github.javaparser.ast.`type`.Type = {
     if (tpe.isClassOrInterfaceType) {
       val clsTpe = tpe.asClassOrInterfaceType()

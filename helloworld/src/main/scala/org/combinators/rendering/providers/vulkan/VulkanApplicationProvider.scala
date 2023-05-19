@@ -8,6 +8,7 @@ import org.combinators.ep.generator.paradigm.{AnyParadigm, FindClass, ObjectOrie
 import org.combinators.ep.generator.paradigm.control.Imperative
 import org.combinators.ep.generator.{AbstractSyntax, Command, NameProvider, Understands}
 import org.combinators.ep.generator.paradigm.ffi.{Arithmetic, Arrays, Assertions, Console, Equality}
+import org.combinators.graphics.RenderingDomain
 
 
 trait VulkanApplicationProvider extends BaseProvider {
@@ -130,6 +131,8 @@ object VulkanApplicationProvider {
     _classTemplating: Templating.WithBase[oo.ClassContext, base.MethodBodyContext, base.type],
     _unitTemplating: Templating.WithBase[base.CompilationUnitContext, base.MethodBodyContext, base.type]
   )
+  (impConstructor: Imperative.WithBase[oo.ConstructorContext, base.type])
+  (_domain: RenderingDomain)
   : VulkanApplicationProvider.WithParadigm[base.type] =
     new VulkanApplicationProvider {
       override val paradigm: base.type = base
@@ -137,6 +140,7 @@ object VulkanApplicationProvider {
       //val impConstructorParadigm: impConstructor.type = impConstructor
       override val names: NameProvider[paradigm.syntax.Name] = nameProvider
       override val ooParadigm: oo.type = oo
+      override val impConstructorParadigm: Imperative.WithBase[ooParadigm.ConstructorContext, paradigm.type] = impConstructor
       override val console: Console.WithBase[base.MethodBodyContext, paradigm.type] = con
       override val array: Arrays.WithBase[base.MethodBodyContext, paradigm.type] = arr
       override val asserts: Assertions.WithBase[base.MethodBodyContext, paradigm.type] = assertsIn

@@ -116,6 +116,10 @@ case class OutputToConsole[Expression](expr: Expression) extends Command {
   type Result = Unit
 }
 
+case class RegisterImportForName(name: String, importList: Seq[String], importAll: Boolean) extends Command {
+  type Result = Unit
+}
+
 trait AnyParadigm {
   val syntax: AbstractSyntax
 
@@ -142,6 +146,11 @@ trait AnyParadigm {
 
   /** The overall project stores the CompilationUnits which can be added to it. */
   trait ProjectCapabilities {
+
+    implicit val canRegisterImportForNameInProject: Understands[ProjectContext, RegisterImportForName]
+    def registerImportForName(tpe: String, importList: Seq[String], importAll: Boolean = false): Generator[ProjectContext, Unit] =
+      AnyParadigm.capability(RegisterImportForName(tpe, importList, importAll))
+
     implicit val canDebugInProject: Understands[ProjectContext, Debug]
     def debug(tag:String = ""): Generator[ProjectContext, Unit] =
       AnyParadigm.capability(Debug(tag))
@@ -195,7 +204,7 @@ trait AnyParadigm {
     implicit val canOutputToConsole: Understands[MethodBodyContext, OutputToConsole[Expression]]
     def output(expr:Expression): Generator[MethodBodyContext, Unit] =
       AnyParadigm.capability(OutputToConsole[Expression](expr))
-    
+
     implicit val canAddImportInMethodBody: Understands[MethodBodyContext, AddImport[Import]]
     def addImport(imp: Import): Generator[MethodBodyContext, Unit] =
       AnyParadigm.capability(AddImport(imp))

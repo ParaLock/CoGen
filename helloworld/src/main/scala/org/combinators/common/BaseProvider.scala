@@ -24,6 +24,7 @@ trait BaseProvider {
   val asserts: Assertions.WithBase[paradigm.MethodBodyContext, paradigm.type]
   val eqls: Equality.WithBase[paradigm.MethodBodyContext, paradigm.type]
 
+  val impConstructorParadigm: Imperative.WithBase[ooParadigm.ConstructorContext, paradigm.type]
 
   import paradigm._
   import syntax._
@@ -39,29 +40,20 @@ trait BaseProvider {
     * @tparam Ctxt
     * @return
     */
-  def domainTypeLookup[Ctxt](dtpe: DataType)(implicit canFindClass: Understands[Ctxt, FindClass[Name, Type]]): Generator[Ctxt, Type] = {
-    FindClass(Seq(names.mangle(names.conceptNameOf(dtpe)))).interpret(canFindClass)
-  }
 
-  /** Provides meaningful default solution to find the base data type in many object-oriented approaches.
-    *
-    * This enables target-language classes to be retrieved from within the code generator in the Method, Class or Constructor contexts.
-    */
-  def registerTypeMapping(tpe: DataType): Generator[ProjectContext, Unit] = {
-    import paradigm.projectCapabilities.addTypeLookupForMethods
-    import ooParadigm.methodBodyCapabilities.canFindClassInMethod // must be present, regardless of IntelliJ
-    import ooParadigm.projectCapabilities.addTypeLookupForClasses
-    import ooParadigm.projectCapabilities.addTypeLookupForConstructors
-    import ooParadigm.classCapabilities.canFindClassInClass // must be present, regardless of IntelliJ
-    import ooParadigm.constructorCapabilities.canFindClassInConstructor // must be present, regardless of IntelliJ
-    val dtpe = TypeRep.DataType(tpe)
-    for {
-      _ <- addTypeLookupForMethods(dtpe, domainTypeLookup(tpe))
-      _ <- addTypeLookupForClasses(dtpe, domainTypeLookup(tpe))
-      _ <- addTypeLookupForConstructors(dtpe, domainTypeLookup(tpe))
-    } yield ()
-  }
+    def get_static_class_member(className: String, memberName: String): Generator[MethodBodyContext, Expression] = {
 
+      import ooParadigm.methodBodyCapabilities._
+      import paradigm.methodBodyCapabilities._
+      for {
+
+        cls <- findClass(names.mangle(className))
+        _ <- resolveAndAddImport(cls)
+        clsExpr <- toStaticTypeExpression(cls)
+        member <- getMember(clsExpr, names.mangle(memberName))
+
+      } yield(member)
+    }
 
   def make_field_class_assignment(
                                       className: String,
@@ -110,6 +102,7 @@ trait BaseProvider {
 
     for {
       classType <- findClass(names.mangle(typeName))
+      _ <- resolveAndAddImport(classType)
       stmt <- instantiateObject(classType, constructorParams)
       _ <- myFunc(stmt)
     } yield stmt
@@ -135,24 +128,27 @@ trait BaseProvider {
     } yield sceneObjVar
   }
 
-
-//  def make_class_instantiation_in_constructor(
+//  def make_class_instantiation_test(
 //                                typeName: String,
 //                                varName: String,
 //                                constructorParams: Seq[Expression]
 //                              ): Generator[ooParadigm.ConstructorContext, paradigm.syntax.Expression] = {
-//    import ooParadigm.constructorCapabilities._
-//    //import impConstructorParadigm.imperativeCapabilities._
+//    import impParadigm.imperativeCapabilities._
+//    import ooParadigm.methodBodyCapabilities._
+//    //import ooParadigm.constructorCapabilities._
+//
+//    import paradigm.methodBodyCapabilities._
+//
 //    for {
-//      classType <- findClass(names.mangle(typeName))
-//      _ <- resolveAndAddImport(classType)
-//      classObj <- instantiateObject(classType, constructorParams)
-//      classObjName <- freshName(names.mangle(varName))
-//      sceneObjVar <- declareVar(classObjName, classType, Some(classObj))
+//      classType <- ooParadigm.constructorCapabilities.findRawClass(names.mangle(typeName))
+//      _ <- resolveAndAddImport[ooParadigm.ConstructorContext, Type](classType)
+//      classObj <- ooParadigm.constructorCapabilities.instantiateObject(classType, constructorParams)
+//      classObjName <- ooParadigm.constructorCapabilities.freshName(names.mangle(varName))
+//      sceneObjVar <- impConstructorParadigm.imperativeCapabilities.declareVar(classObjName, classType, Some(classObj))
 //    } yield sceneObjVar
 //  }
 
-  def make_field_assignment(
+  def make_member_assignment(
                                      expr: Expression,
                                      memberVarName: String
                                    ): Generator[paradigm.MethodBodyContext, Unit] = {
@@ -192,13 +188,29 @@ trait BaseProvider {
 
   }
 
+  def make_method_call(
+                      method: Expression,
+                      args: Seq[Expression]
+                      ): Generator[paradigm.MethodBodyContext, Unit] = {
 
+    import impParadigm.imperativeCapabilities._
+    import ooParadigm.methodBodyCapabilities._
+    import paradigm.methodBodyCapabilities._
+
+    for {
+
+      stmt <- apply(method, args)
+      liftedStmt <- liftExpression(stmt)
+      _ <- addBlockDefinitions(Seq(liftedStmt))
+
+    } yield()
+
+  }
 
   def make_method_call(
                    obj: Expression,
                    methodName: String,
-                   args: Seq[Expression],
-                   isFloating: Boolean = false
+                   args: Seq[Expression]
                  ): Generator[paradigm.MethodBodyContext, Expression] = {
     import impParadigm.imperativeCapabilities._
     import ooParadigm.methodBodyCapabilities._
@@ -206,11 +218,32 @@ trait BaseProvider {
 
     for {
 
-      alignFunc <- getMember(
+      func <- getMember(
         obj,
         names.mangle(methodName)
       )
-      stmt <- apply(alignFunc, args)
+      stmt <- apply(func, args)
+      liftedStmt <- liftExpression(stmt)
+      _ <- addBlockDefinitions(Seq(liftedStmt))
+
+    } yield (stmt)
+  }
+
+  def make_method_call_in_constructor(
+                        obj: Expression,
+                        methodName: String,
+                        args: Seq[Expression]
+                      ): Generator[ooParadigm.ConstructorContext, Expression] = {
+    import impConstructorParadigm.imperativeCapabilities._
+    import ooParadigm.constructorCapabilities._
+
+    for {
+
+      func <- getMember(
+        obj,
+        names.mangle(methodName)
+      )
+      stmt <- apply(func, args)
       liftedStmt <- liftExpression(stmt)
       _ <- addBlockDefinitions(Seq(liftedStmt))
 
@@ -248,36 +281,6 @@ trait BaseProvider {
     } yield()
 
   }
-
-  def make_method_call_with_ret(
-                        obj: Expression,
-                        methodName: String,
-                        returnVarType: Type,
-                        returnVarName: String,
-                        args: Seq[Expression]
-                      ): Generator[paradigm.MethodBodyContext, paradigm.syntax.Expression] = {
-    import impParadigm.imperativeCapabilities._
-    import ooParadigm.methodBodyCapabilities._
-    import paradigm.methodBodyCapabilities._
-
-    for {
-
-      //actualType <- toTargetLanguageType(returnVarType)
-      alignFunc <- getMember(
-        obj,
-        names.mangle(methodName)
-      )
-      stmt <- apply(alignFunc, args)
-
-      retVarName <- freshName(names.mangle(returnVarName))
-      retVar <- declareVar(retVarName, returnVarType, Some(stmt))
-
-      liftedStmt <- liftExpression(stmt)
-      _ <- addBlockDefinitions(Seq(liftedStmt))
-
-    } yield retVar
-  }
-
 
   def print_message(msg: String): Generator[paradigm.MethodBodyContext, Option[paradigm.syntax.Expression]] = {
     import impParadigm.imperativeCapabilities._

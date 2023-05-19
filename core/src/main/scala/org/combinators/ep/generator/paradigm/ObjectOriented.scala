@@ -95,7 +95,6 @@ case class GetConstructor[Type, Expression](tpe: Type) extends Command {
 case class FindClass[Name, Type](qualifiedName: Seq[Name], isRaw: Boolean = false) extends Command {
   type Result = Type
 }
-
 trait ObjectOriented {
   val base: AnyParadigm
   import base._
@@ -277,6 +276,10 @@ trait ObjectOriented {
     implicit val canFindClassInConstructor: Understands[ConstructorContext, FindClass[Name, Type]]
     def findClass(qualifiedName: Name*): Generator[ConstructorContext, Type] =
       AnyParadigm.capability(FindClass[Name, Type](qualifiedName))
+
+    def findRawClass(qualifiedName: Name*): Generator[ConstructorContext, Type] =
+      AnyParadigm.capability(FindClass[Name, Type](qualifiedName, true))
+
 
     implicit val canGetFreshNameInConstructor: Understands[ConstructorContext, FreshName[Name]]
     def freshName(basedOn: Name): Generator[ConstructorContext, Name] =

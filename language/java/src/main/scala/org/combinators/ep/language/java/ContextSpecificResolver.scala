@@ -6,7 +6,10 @@ import org.combinators.ep.generator.Command.Generator
 import org.combinators.ep.language.java.Syntax.MangledName
 import Syntax.default._
 import com.github.javaparser.ast.ImportDeclaration
+import com.github.javaparser.ast.expr.{Name => JName}
 import org.combinators.ep.generator.Command
+
+import scala.collection.mutable
 
 case class ContextSpecificResolver(
   _methodTypeResolution: ContextSpecificResolver => TypeRep => Generator[MethodBodyCtxt, Type],
@@ -38,6 +41,10 @@ case class ContextSpecificResolver(
 }
 
 object ContextSpecificResolver {
+
+  case class ImportInfo(importList: Seq[String], importAll: Boolean)
+  var importsByTypeName: mutable.HashMap[String, ImportInfo] = new mutable.HashMap[String, ImportInfo]
+
   def updateResolver
     (config: Config, rep: TypeRep, translateTo: Type, extraImport: Option[ImportDeclaration] = None)
     (reification: rep.HostType => Expression): ContextSpecificResolver => ContextSpecificResolver =

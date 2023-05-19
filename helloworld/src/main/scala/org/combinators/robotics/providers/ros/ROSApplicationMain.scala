@@ -9,6 +9,8 @@ import org.combinators.ep.generator.FileWithPathPersistable._
 import org.combinators.ep.generator.{FileWithPath, FileWithPathPersistable}
 import org.combinators.ep.language.java.paradigm.ObjectOriented
 import org.combinators.ep.language.java.{CodeGenerator, JavaNameProvider, PartiallyBoxed, Syntax}
+import org.combinators.robotics.examples.RoboticsDomain
+
 import java.nio.file.{Path, Paths}
 
 /**
@@ -41,6 +43,8 @@ class ROSApplicationMain {
     generator.intsInMethod,
     generator.assertionsInMethod,
     generator.equalityInMethod
+  )(generator.imperativeInConstructor)(
+    new RoboticsDomain()
   )
 
 

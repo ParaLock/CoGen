@@ -9,6 +9,8 @@ import org.combinators.ep.generator.FileWithPathPersistable._
 import org.combinators.ep.generator.{FileWithPath, FileWithPathPersistable}
 import org.combinators.ep.language.java.paradigm.ObjectOriented
 import org.combinators.ep.language.java.{CodeGenerator, JavaNameProvider, PartiallyBoxed, Syntax}
+import org.combinators.graphics.RenderingDomain
+
 import java.nio.file.{Path, Paths}
 
 /**
@@ -44,6 +46,8 @@ class VulkanApplicationMain {
   )(
     generator.templatingMethodInClass,
     generator.templatingMethodInUnit
+  )(generator.imperativeInConstructor)(
+    new RenderingDomain()
   )
 
 
