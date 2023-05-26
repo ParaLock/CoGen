@@ -10,6 +10,7 @@ import org.combinators.ep.generator.{AbstractSyntax, Command, NameProvider, Unde
 import org.combinators.ep.generator.paradigm.ffi.{Arithmetic, Arrays, Assertions, Console, Equality}
 import org.combinators.ep.generator.paradigm.{AnyParadigm, FindClass, ObjectOriented}
 import org.combinators.graphics.GUIDomain
+import org.combinators.gui.domain_model.GridLayout
 
 
 trait QTApplicationProvider extends BaseProvider {
@@ -67,6 +68,12 @@ trait QTApplicationProvider extends BaseProvider {
     import paradigm.projectCapabilities._
 
     val importsList = Seq[Seq[String]](
+      Seq("io", "qt", "core", "Qt"),
+      Seq("io", "qt", "gui", "QCloseEvent"),
+      Seq("io", "qt", "widgets", "QApplication"),
+      Seq("io", "qt", "widgets", "QGridLayout"),
+      Seq("io", "qt", "widgets", "QLabel"),
+      Seq("io", "qt", "widgets", "QWidget"),
       Seq("io", "qt", "widgets", "QMainWindow")
     )
 
@@ -89,6 +96,7 @@ trait QTApplicationProvider extends BaseProvider {
     import ooParadigm.methodBodyCapabilities._
     import impParadigm.imperativeCapabilities._
 
+    val layout: GridLayout = domain.layout
     val windowTitle: String = domain.window.title
 
     for {
@@ -118,6 +126,111 @@ trait QTApplicationProvider extends BaseProvider {
         "gridLayout",
         Seq(window)
       )
+
+      unitType <- toTargetLanguageType(TypeRep.Unit)
+      intType <- toTargetLanguageType(TypeRep.Int)
+
+      zero <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, 0)
+      one <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, 1)
+      one_hundred <- paradigm.methodBodyCapabilities.reify(TypeRep.Double, 100)
+
+      // Get grid size
+      numRows <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, layout.cols)
+      numCols <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, layout.rows)
+
+      // Row/Col loop -----------------------------
+
+      iName <- freshName(names.mangle("i"))
+      iType <- toTargetLanguageType(TypeRep.Int)
+
+      iVar <- declareVar(iName, iType, Some(zero))
+      compExpr <- ffiArithmetic.arithmeticCapabilities.lt(iVar, numRows)
+
+      stmt <- whileLoop(compExpr, for {
+
+        jName <- freshName(names.mangle("j"))
+        jType <- toTargetLanguageType(TypeRep.Int)
+        jVar <- declareVar(jName, jType, Some(zero))
+
+        jCompExpr <- ffiArithmetic.arithmeticCapabilities.lt(jVar, numCols)
+
+        innerLoop <- whileLoop(jCompExpr, for {
+
+          self <- selfReference()
+          elements <- getMember(
+            self,
+            names.mangle("elements"),
+          )
+
+          rowTimesCol <- ffiArithmetic.arithmeticCapabilities.mult(
+            numRows,
+            jVar
+          )
+
+          index <- ffiArithmetic.arithmeticCapabilities.add(
+            rowTimesCol,
+            iVar
+          )
+
+          msgVal <- array.arrayCapabilities.get(
+            elements,
+            index
+          )
+
+          txt <- paradigm.methodBodyCapabilities.reify(
+            TypeRep.String,
+            "Label "
+          )
+
+          iTimes3 <- ffiArithmetic.arithmeticCapabilities.mult(iVar, numCols)
+          jPlus1 <- ffiArithmetic.arithmeticCapabilities.add(jVar, one)
+          rowsPlusCols <- ffiArithmetic.arithmeticCapabilities.add(iTimes3, jPlus1)
+          labelExpr <- ffiArithmetic.arithmeticCapabilities.add(txt, rowsPlusCols)
+
+          labelClass <- make_class_instantiation(
+            "QLabel",
+            "label",
+            Seq(labelExpr)
+          )
+
+          alignmentFlag <- get_static_class_member(
+            "Qt",
+            "AlignmentFlag"
+          )
+
+          alignCenter <- getMember(
+            alignmentFlag,
+            names.mangle("AlignCenter")
+          )
+
+          _ <- make_method_call(
+            labelClass,
+            "setAlignment",
+            Seq(alignCenter)
+          )
+
+
+          _ <- make_method_call(
+            gridLayout,
+            "addWidget",
+            Seq(labelClass, iVar, jVar)
+          )
+
+          inc <- ffiArithmetic.arithmeticCapabilities.add(jVar, one)
+          incAssign <- assignVar(jVar, inc)
+          _ <- addBlockDefinitions(Seq(incAssign))
+
+        } yield ()
+        )
+
+        inc <- ffiArithmetic.arithmeticCapabilities.add(iVar, one)
+        incAssign <- assignVar(iVar, inc)
+
+        _ <- addBlockDefinitions(Seq(innerLoop, incAssign))
+
+      } yield ()
+      )
+      _ <- addBlockDefinitions(Seq(stmt))
 
       _ <- make_method_call(
         window,

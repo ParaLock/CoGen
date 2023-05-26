@@ -55,6 +55,20 @@ trait BaseProvider {
       } yield(member)
     }
 
+  def get_static_class_member(cls: Type, memberName: String): Generator[MethodBodyContext, Expression] = {
+
+    import ooParadigm.methodBodyCapabilities._
+    import paradigm.methodBodyCapabilities._
+    for {
+
+      _ <- resolveAndAddImport(cls)
+      clsExpr <- toStaticTypeExpression(cls)
+      member <- getMember(clsExpr, names.mangle(memberName))
+
+    } yield (member)
+  }
+
+
   def make_field_class_assignment(
                                       className: String,
                                       fieldName: String,
