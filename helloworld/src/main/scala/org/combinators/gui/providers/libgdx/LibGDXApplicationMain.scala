@@ -43,7 +43,9 @@ class LibGDXApplicationMain {
     generator.intsInMethod,
     generator.assertionsInMethod,
     generator.equalityInMethod
-  )(generator.imperativeInConstructor)(
+  )(
+    generator.imperativeInConstructor
+  )(
     new GUIDomain()
   )
 

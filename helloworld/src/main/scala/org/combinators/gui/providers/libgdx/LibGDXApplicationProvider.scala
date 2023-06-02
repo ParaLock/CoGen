@@ -450,7 +450,9 @@ object LibGDXApplicationProvider {
    ffiassert: Assertions.WithBase[base.MethodBodyContext, base.type],
    ffiequal: Equality.WithBase[base.MethodBodyContext, base.type]
   )
-  (impConstructor: Imperative.WithBase[oo.ConstructorContext, base.type])
+  (
+    impConstructor: Imperative.WithBase[oo.ConstructorContext, base.type],
+  )
   (_domain: GUIDomain)
   : LibGDXApplicationProvider.WithParadigm[base.type] =
     new LibGDXApplicationProvider {

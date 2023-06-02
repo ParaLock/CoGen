@@ -7,7 +7,7 @@ import com.github.javaparser.ast.{ImportDeclaration, Modifier, NodeList}
 import com.github.javaparser.ast.`type`.ClassOrInterfaceType
 import com.github.javaparser.ast.`type`.ReferenceType
 import com.github.javaparser.ast.body.{ClassOrInterfaceDeclaration, ConstructorDeclaration, MethodDeclaration}
-import com.github.javaparser.ast.expr.{AssignExpr, CastExpr, EnclosedExpr, Expression, FieldAccessExpr, InstanceOfExpr, MethodCallExpr, NameExpr, ObjectCreationExpr, ThisExpr, TypeExpr, Name => JName}
+import com.github.javaparser.ast.expr.{AssignExpr, CastExpr, ClassExpr, EnclosedExpr, Expression, FieldAccessExpr, InstanceOfExpr, MethodCallExpr, MethodReferenceExpr, NameExpr, ObjectCreationExpr, SimpleName, ThisExpr, TypeExpr, Name => JName}
 import com.github.javaparser.ast.stmt.{BlockStmt, ExplicitConstructorInvocationStmt, ExpressionStmt, ReturnStmt}
 import org.combinators.ep.domain.abstractions.TypeRep
 import org.combinators.ep.domain.instances.InstanceRep
@@ -767,6 +767,22 @@ trait ObjectOriented[AP <: AnyParadigm] extends OO {
               new ClassOrInterfaceType(scopes, suffix.mangled)}
 
             (context, qualifiedName)
+          }
+        }
+      override implicit val canGetMethodReferenceInMethod: Understands[MethodBodyCtxt, GetMethodReference[Name, Expression]] =
+        new Understands[MethodBodyContext, GetMethodReference[Name, Expression]] {
+          def perform(
+                       context: MethodBodyContext,
+                       command: GetMethodReference[Name, Expression]
+                     ): (MethodBodyContext, Expression) = {
+
+            val getMethodReference: MethodReferenceExpr = new MethodReferenceExpr(
+              command.expr,
+              null,
+              command.methodName.toString
+            )
+
+            (context.copy(), (getMethodReference))
           }
         }
     }

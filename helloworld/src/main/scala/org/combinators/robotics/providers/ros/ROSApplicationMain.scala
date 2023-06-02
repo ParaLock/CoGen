@@ -43,7 +43,10 @@ class ROSApplicationMain {
     generator.intsInMethod,
     generator.assertionsInMethod,
     generator.equalityInMethod
-  )(generator.imperativeInConstructor)(
+  )(
+    generator.imperativeInConstructor,
+    generator.exceptionsInMethod
+  )(
     new RoboticsDomain()
   )
 

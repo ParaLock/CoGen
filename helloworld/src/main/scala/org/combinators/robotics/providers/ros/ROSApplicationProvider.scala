@@ -4,11 +4,10 @@ import com.github.javaparser.ast.ImportDeclaration
 import org.combinators.common._
 import org.combinators.ep.domain.abstractions.{DataType, DataTypeCase, TypeRep}
 import org.combinators.ep.generator.Command.{Generator, lift}
-import org.combinators.ep.generator.paradigm.ObjectOriented
+import org.combinators.ep.generator.paradigm.{AnyParadigm, FindClass, ObjectOriented}
 import org.combinators.ep.generator.paradigm.control.Imperative
 import org.combinators.ep.generator.{AbstractSyntax, Command, NameProvider, Understands}
-import org.combinators.ep.generator.paradigm.ffi.{Arithmetic, Arrays, Assertions, Console, Equality}
-import org.combinators.ep.generator.paradigm.{AnyParadigm, FindClass, ObjectOriented}
+import org.combinators.ep.generator.paradigm.ffi.{Arithmetic, Arrays, Assertions, Console, Equality, Exceptions}
 import org.combinators.robotics.examples.RoboticsDomain
 
 
@@ -23,6 +22,8 @@ trait ROSApplicationProvider extends BaseProvider {
   lazy val stopFuncName = names.mangle("stop")
   lazy val mainFuncName = names.mangle("main")
   lazy val testWindowName = names.mangle("windowTest")
+
+  val exceptions: Exceptions.WithBase[paradigm.MethodBodyContext,paradigm.type]
 
   def instantiate(baseTpe: DataType, tpeCase: DataTypeCase, args: Expression*): Generator[MethodBodyContext, Expression] = {
     import paradigm.methodBodyCapabilities._
@@ -39,6 +40,7 @@ trait ROSApplicationProvider extends BaseProvider {
     import paradigm.methodBodyCapabilities._
     import ooParadigm.methodBodyCapabilities._
     import impParadigm.imperativeCapabilities._
+    import exceptions.exceptionCapabilities._
     for {
 
       // Make signature
@@ -49,6 +51,69 @@ trait ROSApplicationProvider extends BaseProvider {
       _ <- setReturnType(unitType)
       _ <- setParameters(Seq((names.mangle("args"), arrayType)))
       // --------------
+
+      self <- selfReference()
+
+      testCls <- findClass(names.mangle("test1"))
+      testClsExpr <- toStaticTypeExpression(testCls)
+      methodRef <- getMethodReference(self, names.mangle("callback"))
+
+      myMethod <- getMember(self, names.mangle("myMethod1"))
+
+      _ <- make_method_call(myMethod, Seq(methodRef))
+
+
+      exceptionCls <- findClass(names.mangle("Exception1"))
+      exceptionCls2 <- findClass(names.mangle("Exception2"))
+
+      _ <- addExceptionHandler(
+        for {
+          _ <- print_message("in the try block")
+        } yield None,
+        Seq(
+          (exceptionCls, names.mangle("e"),
+
+            for {
+              _ <- print_message("in the first catch")
+            } yield None
+
+          ),
+          (exceptionCls2, names.mangle("e"),
+            for {
+              _ <- print_message("in the second catch")
+            } yield None
+          )
+        ),
+        Some(
+          for {
+            _ <- print_message("in the finally block")
+          } yield None
+        )
+      )
+
+    } yield None
+  }
+
+  def make_try_contents(): Generator[MethodBodyContext, Unit] = {
+
+    import paradigm.methodBodyCapabilities._
+    import ooParadigm.methodBodyCapabilities._
+    import impParadigm.imperativeCapabilities._
+    for {
+
+      _ <- print_message("in the try block")
+
+    } yield None
+  }
+
+  def make_catch_contents(): Generator[MethodBodyContext, Unit] = {
+
+    import paradigm.methodBodyCapabilities._
+    import ooParadigm.methodBodyCapabilities._
+    import impParadigm.imperativeCapabilities._
+    for {
+
+      _ <- print_message("in the catch block")
 
     } yield None
   }
@@ -107,7 +172,10 @@ object ROSApplicationProvider {
    ffiassert: Assertions.WithBase[base.MethodBodyContext, base.type],
    ffiequal: Equality.WithBase[base.MethodBodyContext, base.type]
   )
-  (impConstructor: Imperative.WithBase[oo.ConstructorContext, base.type])
+  (
+    impConstructor: Imperative.WithBase[oo.ConstructorContext, base.type],
+    _exceptions: Exceptions.WithBase[base.MethodBodyContext,base.type]
+  )
   (_domain: RoboticsDomain)
   : ROSApplicationProvider.WithParadigm[base.type] =
     new ROSApplicationProvider {
@@ -124,6 +192,7 @@ object ROSApplicationProvider {
       override val ffiArithmetic: Arithmetic.WithBase[paradigm.MethodBodyContext, paradigm.type, Int] = ffiarith
       override val ffiAssertions: Assertions.WithBase[paradigm.MethodBodyContext, paradigm.type] = ffiassert
       override val ffiEquality: Equality.WithBase[paradigm.MethodBodyContext, paradigm.type] = ffiequal
+      override val exceptions: Exceptions.WithBase[paradigm.MethodBodyContext,paradigm.type] = _exceptions
     }
 }
 

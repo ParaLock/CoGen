@@ -5,11 +5,10 @@ import com.github.javaparser.ast.PackageDeclaration
 import com.github.javaparser.ast.`type`.PrimitiveType
 import com.github.javaparser.ast.expr.{DoubleLiteralExpr, IntegerLiteralExpr, TypeExpr}
 import org.combinators.ep.domain.abstractions.TypeRep
-import org.combinators.ep.generator.{Command, NameProvider}
-import org.combinators.ep.generator.paradigm.Templating
+import org.combinators.ep.generator.{Command, Features, NameProvider}
+import org.combinators.ep.generator.paradigm.{Templating}
 import org.combinators.ep.language.java.paradigm._
 import org.combinators.ep.language.java.paradigm.ffi._
-import org.combinators.ep.generator.Features
 
 /**
  * Java-specific.

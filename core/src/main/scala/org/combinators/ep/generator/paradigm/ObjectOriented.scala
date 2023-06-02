@@ -95,6 +95,11 @@ case class GetConstructor[Type, Expression](tpe: Type) extends Command {
 case class FindClass[Name, Type](qualifiedName: Seq[Name], isRaw: Boolean = false) extends Command {
   type Result = Type
 }
+
+case class GetMethodReference[Name, Expression](expr: Expression, methodName: Name) extends Command {
+  type Result = Expression
+}
+
 trait ObjectOriented {
   val base: AnyParadigm
   import base._
@@ -335,6 +340,10 @@ trait ObjectOriented {
 
     def findRawClass(qualifiedName: Name*): Generator[MethodBodyContext, Type] =
       AnyParadigm.capability(FindClass[Name, Type](qualifiedName, true))
+
+    implicit val canGetMethodReferenceInMethod: Understands[MethodBodyContext, GetMethodReference[Name, Expression]]
+    def getMethodReference(expr: Expression, methodName: Name): Generator[MethodBodyContext, Expression] =
+      AnyParadigm.capability(GetMethodReference[Name, Expression](expr, methodName))
 
   }
   val methodBodyCapabilities: MethodBodyCapabilities
