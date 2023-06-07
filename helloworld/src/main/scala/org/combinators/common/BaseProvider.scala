@@ -124,6 +124,7 @@ trait BaseProvider {
   }
 
 
+
   def make_class_instantiation(
                            typeName: String,
                            varName: String,
@@ -176,6 +177,29 @@ trait BaseProvider {
       stmt <- assignVar(member, expr)
       _ <- addBlockDefinitions(Seq(stmt))
     } yield ()
+
+  }
+
+  def get_static_method_call(
+                               obj: Type,
+                               methodName: String,
+                               args: Seq[Expression]
+                             ): Generator[paradigm.MethodBodyContext, Expression] = {
+    import impParadigm.imperativeCapabilities._
+    import ooParadigm.methodBodyCapabilities._
+    import paradigm.methodBodyCapabilities._
+
+    for {
+
+      expr <- toStaticTypeExpression(obj)
+
+      func <- getMember(
+        expr,
+        names.mangle(methodName)
+      )
+      stmt <- apply(func, args)
+
+    } yield (stmt)
 
   }
 

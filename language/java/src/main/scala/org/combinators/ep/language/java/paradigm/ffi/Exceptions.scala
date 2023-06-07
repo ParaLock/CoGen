@@ -1,8 +1,10 @@
 package org.combinators.ep.language.java.paradigm.ffi     /*DI:LD:AI*/
 
+import com.github.javaparser.{ParseResult, StaticJavaParser}
+import com.github.javaparser.ast.`type`.ClassOrInterfaceType
 import com.github.javaparser.ast.body.{MethodDeclaration, Parameter}
 import com.github.javaparser.ast.{ImportDeclaration, NodeList}
-import com.github.javaparser.ast.expr.{BooleanLiteralExpr, ObjectCreationExpr}
+import com.github.javaparser.ast.expr.{AssignExpr, BooleanLiteralExpr, Expression, IntegerLiteralExpr, NameExpr, ObjectCreationExpr, VariableDeclarationExpr}
 import com.github.javaparser.ast.stmt.{CatchClause, ThrowStmt, TryStmt}
 import org.combinators.ep.generator.Command.Generator
 import org.combinators.ep.generator.paradigm.{Apply, ffi}
@@ -20,15 +22,19 @@ class Exceptions[AP <: AnyParadigm](val base: AP) extends Excptns[MethodBodyCtxt
 
       override implicit val canAddExceptionHandler: Understands[
         MethodBodyCtxt,
-        AddExceptionHandler[Statement, MethodBodyCtxt, Type, Name]
+        AddExceptionHandler[Expression, Statement, MethodBodyCtxt, Type, Name]
       ] = new Understands[
         MethodBodyCtxt,
-        AddExceptionHandler[Statement, MethodBodyCtxt, Type, Name]
+        AddExceptionHandler[Expression, Statement, MethodBodyCtxt, Type, Name]
       ] {
 
-        override def perform(context: MethodBodyCtxt, command: AddExceptionHandler[Statement, MethodBodyCtxt, Type, Name]): (MethodBodyCtxt, Unit) = {
+        override def perform(context: MethodBodyCtxt, command: AddExceptionHandler[Expression, Statement, MethodBodyCtxt, Type, Name]): (MethodBodyCtxt, Unit) = {
 
           val tryStmt: TryStmt = new TryStmt()
+
+          if(command.tryExpr.isDefined) {
+            tryStmt.getResources().add(command.tryExpr.get);
+          }
 
           val (newContext, _) = Command.runGenerator(
             command.tryContents,

@@ -394,6 +394,13 @@ trait AnyParadigm extends AP {
             (context.copy(resolver = updatedResolver), freshName)
           }
         }
+      override implicit val canNoop: Understands[MethodBodyCtxt, Noop] =
+        new Understands[MethodBodyContext, Noop] {
+          /** Returns the updated context and the result of the command. */
+          override def perform(context: MethodBodyCtxt, command: Noop): (MethodBodyCtxt, Unit) = {
+            (context, ())
+          }
+        }
     }
 
   val testCapabilities: TestCapabilities =

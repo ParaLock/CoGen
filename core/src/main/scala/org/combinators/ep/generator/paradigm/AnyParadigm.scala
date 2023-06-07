@@ -120,6 +120,10 @@ case class RegisterImportForName(name: String, importList: Seq[String], importAl
   type Result = Unit
 }
 
+case class Noop() extends Command {
+  type Result = Unit
+}
+
 trait AnyParadigm {
   val syntax: AbstractSyntax
 
@@ -200,6 +204,11 @@ trait AnyParadigm {
     implicit val canDebugInMethodBody: Understands[MethodBodyContext, Debug]
     def debug(tag:String = ""): Generator[MethodBodyContext, Unit] =
       AnyParadigm.capability(Debug(tag))
+
+    implicit val canNoop: Understands[MethodBodyContext, Noop]
+    def noop(): Generator[MethodBodyContext, Unit] =
+      AnyParadigm.capability(Noop())
+
 
     implicit val canOutputToConsole: Understands[MethodBodyContext, OutputToConsole[Expression]]
     def output(expr:Expression): Generator[MethodBodyContext, Unit] =

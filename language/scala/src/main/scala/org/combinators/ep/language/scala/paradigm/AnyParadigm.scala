@@ -218,6 +218,7 @@ trait AnyParadigm extends AP {
 
   val methodBodyCapabilities: MethodBodyCapabilities =
     new MethodBodyCapabilities {
+
       implicit val canDebugInMethodBody: Understands[MethodBodyCtxt, Debug] =
         new Understands[MethodBodyCtxt, Debug] {
           def perform(
@@ -394,6 +395,7 @@ trait AnyParadigm extends AP {
             (context, MangledName.fromAST(Term.fresh(command.basedOn.toAST.value)))
           }
         }
+      override implicit val canNoop: Understands[MethodBodyCtxt, Noop] = ???
     }
 
   val testCapabilities: TestCapabilities =

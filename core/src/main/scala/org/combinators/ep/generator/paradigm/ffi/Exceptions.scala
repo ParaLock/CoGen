@@ -8,8 +8,9 @@ case class Exception[Expression,Stmt](exp:Expression) extends Command {
   type Result = Stmt
 }
 
-case class AddExceptionHandler[Statement, Context, Type, Name](
+case class AddExceptionHandler[Expression, Statement, Context, Type, Name](
   tryContents: Generator[Context, Unit],
+  tryExpr: Option[Expression],
   catchContents: Seq[(Type, Name, Generator[Context, Unit])],
   finallyContents: Option[Generator[Context, Unit]],
 ) extends Command {
@@ -26,16 +27,18 @@ trait Exceptions[Context] extends FFI {
     def raise(exp: Expression): Generator[Context, Statement] =
       AnyParadigm.capability(Exception[Expression, Statement](exp))
 
-    implicit val canAddExceptionHandler: Understands[Context, AddExceptionHandler[Statement, Context, Type, Name]]
+    implicit val canAddExceptionHandler: Understands[Context, AddExceptionHandler[Expression, Statement, Context, Type, Name]]
 
     def addExceptionHandler(
                              tryContents: Generator[Context, Unit],
+                             tryExpr: Option[Expression],
                              catchContents: Seq[(Type, Name, Generator[Context, Unit])],
                              finallyContents: Option[Generator[Context, Unit]] = None,
                            ): Generator[Context, Unit] = {
-      AnyParadigm.capability[Context, Unit, AddExceptionHandler[Statement, Context, Type, Name]](
+      AnyParadigm.capability[Context, Unit, AddExceptionHandler[Expression, Statement, Context, Type, Name]](
         AddExceptionHandler(
           tryContents,
+          tryExpr,
           catchContents,
           finallyContents
         )
