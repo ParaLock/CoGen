@@ -7,7 +7,7 @@ import org.combinators.ep.generator.{Command, Understands}
 import org.combinators.ep.generator.Command.Generator
 import org.combinators.ep.generator.paradigm.{DeclareVariable, IfThenElse}
 import org.combinators.ep.generator.paradigm.control.{Imperative => Imp, _}
-import org.combinators.ep.language.java.{CtorCtxt, MethodBodyCtxt}
+import org.combinators.ep.language.java.{CtorCtxt, MethodBodyCtxt, Syntax}
 
 trait Imperative[Ctxt, AP <: AnyParadigm] extends Imp[Ctxt] {
 
@@ -120,7 +120,12 @@ trait Imperative[Ctxt, AP <: AnyParadigm] extends Imp[Ctxt] {
           (manip.copyWithBlock(forCtxt, manip.getBlock(context)), forStmt)
         }
       }
-
+    override implicit val canNameToExpression: Understands[Ctxt, NameToExpression[Syntax.MangledName, Expression]] =
+      new Understands[Ctxt, NameToExpression[Name, Expression]] {
+        def perform(context: Ctxt, command: NameToExpression[Syntax.MangledName, Expression]): (Ctxt, Expression) = {
+          (context, new NameExpr(command.name.toAST))
+      }
+      }
   }
 }
 

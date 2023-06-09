@@ -17,7 +17,11 @@ class RoboticsDomain {
   nodes += new Node(
     "A",
     new roles.Client(
-      testServiceName
+      testServiceName,
+      "AddTwoIntsRequest",
+      "AddTwoIntsResponse",
+      "AddTwoInts",
+      "ClientOnResponse.java"
     ),
     "ClientLoopFragment.java"
   )
@@ -26,6 +30,9 @@ class RoboticsDomain {
     "B",
     new roles.Server(
       testServiceName,
+      "AddTwoIntsRequest",
+      "AddTwoIntsResponse",
+      "AddTwoInts",
       "ServerOnRequest.java"
     ),
     "ServerLoopFragment.java"
@@ -35,6 +42,7 @@ class RoboticsDomain {
     "C",
     new roles.Publisher(
       testTopicName,
+      "String"
     ),
     "PublisherLoopFragment.java"
   )
@@ -43,6 +51,7 @@ class RoboticsDomain {
     "D",
     new Subscriber(
       testTopicName,
+      "String",
       "ClientOnMessage.java"
     ),
     "SubscriberLoopFragment.java"

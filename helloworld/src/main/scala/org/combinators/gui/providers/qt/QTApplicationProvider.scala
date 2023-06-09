@@ -58,7 +58,8 @@ trait QTApplicationProvider extends BaseProvider {
         _ <- make_method_call(
           event,
           "accept",
-          Seq.empty
+          Seq.empty,
+          true
         )
 
       } yield None
@@ -118,7 +119,8 @@ trait QTApplicationProvider extends BaseProvider {
       _ <- make_method_call(
         window,
         "setWindowTitle",
-        Seq(title)
+        Seq(title),
+        true
       )
 
       gridLayout <- make_class_instantiation(
@@ -206,14 +208,16 @@ trait QTApplicationProvider extends BaseProvider {
           _ <- make_method_call(
             labelClass,
             "setAlignment",
-            Seq(alignCenter)
+            Seq(alignCenter),
+            true
           )
 
 
           _ <- make_method_call(
             gridLayout,
             "addWidget",
-            Seq(labelClass, iVar, jVar)
+            Seq(labelClass, iVar, jVar),
+            true
           )
 
           inc <- ffiArithmetic.arithmeticCapabilities.add(jVar, one)
@@ -235,7 +239,8 @@ trait QTApplicationProvider extends BaseProvider {
       _ <- make_method_call(
         window,
         "show",
-        Seq.empty
+        Seq.empty,
+        true
       )
 
     } yield None
@@ -264,7 +269,8 @@ trait QTApplicationProvider extends BaseProvider {
           "QApplication",
           "initialize"
         )
-        _ <- make_method_call(initMethod, Seq(inputArgs))
+        _ <- make_method_call(initMethod, Seq(inputArgs),
+          true)
 
         _ <- make_class_instantiation_floating(
           "Application",
@@ -276,7 +282,7 @@ trait QTApplicationProvider extends BaseProvider {
           "QApplication",
           "exec"
         )
-        _ <- make_method_call(execMethod, Seq.empty)
+        _ <- make_method_call(execMethod, Seq.empty, true)
 
       } yield None
     }

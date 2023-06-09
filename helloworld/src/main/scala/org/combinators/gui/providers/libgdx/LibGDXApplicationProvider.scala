@@ -52,7 +52,7 @@ trait LibGDXApplicationProvider extends BaseProvider {
 
       selfRef <- selfReference()
       batchObj <- getMember(selfRef, names.mangle("batch"))
-      _ <- make_method_call(batchObj, "dispose", Seq.empty)
+      _ <- make_method_call(batchObj, "dispose", Seq.empty, true)
 
     } yield None
   }
@@ -129,7 +129,8 @@ trait LibGDXApplicationProvider extends BaseProvider {
           falseVal,
           getWidthCall,
           getHeightCall
-        )
+        ),
+        true
       )
 
       screenUtilsCls <- findClass(names.mangle("ScreenUtils"))
@@ -137,13 +138,15 @@ trait LibGDXApplicationProvider extends BaseProvider {
       _ <- make_static_method_call(
         screenUtilsCls,
         "clear",
-        Seq(zero, zero, zero, zero)
+        Seq(zero, zero, zero, zero),
+        true
       )
 
       _ <- make_method_call(
         cameraObj,
        "update",
-        Seq.empty
+        Seq.empty,
+        true
       )
 
       camCombined <- getMember(
@@ -154,7 +157,8 @@ trait LibGDXApplicationProvider extends BaseProvider {
       _ <- make_method_call(
          batchObj,
        "setProjectionMatrix",
-         Seq(camCombined)
+         Seq(camCombined),
+        true
       )
 
       glClearColorFunc <- getMember(
@@ -176,19 +180,22 @@ trait LibGDXApplicationProvider extends BaseProvider {
       _ <- make_method_call(
         gdxGlObj,
         "glClearColor",
-        Seq(zero, zero, zero, one)
+        Seq(zero, zero, zero, one),
+        true
       )
 
       _ <- make_method_call(
         gdxGlObj,
         "glClear",
-        Seq(colorBufferBit)
+        Seq(colorBufferBit),
+        true
       )
 
       _ <- make_method_call(
         batchObj,
         "begin",
-        Seq.empty
+        Seq.empty,
+        true
       )
 
       numRows <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, layout.cols)
@@ -237,7 +244,8 @@ trait LibGDXApplicationProvider extends BaseProvider {
           drawCall <- make_method_call(
             fontObj,
             "draw",
-            Seq(msg, currXVar, currYVar)
+            Seq(msg, currXVar, currYVar),
+            true
           )
           _ <- if ((index + 1) % layout.cols == 0) {
             for {
@@ -265,7 +273,8 @@ trait LibGDXApplicationProvider extends BaseProvider {
       _ <- make_method_call(
         batchObj,
         "end",
-        Seq.empty
+        Seq.empty,
+        true
       )
 
     } yield None
@@ -305,13 +314,15 @@ trait LibGDXApplicationProvider extends BaseProvider {
       _ <- make_method_call(
         configObj,
         "setForegroundFPS",
-        Seq(fps)
+        Seq(fps),
+        true
       )
 
       _ <- make_method_call(
         configObj,
         "setTitle",
-        Seq(title)
+        Seq(title),
+        true
       )
 
       trueExpr <- paradigm.methodBodyCapabilities.reify(
@@ -322,7 +333,8 @@ trait LibGDXApplicationProvider extends BaseProvider {
       _ <- make_method_call(
         configObj,
         "useVsync",
-        Seq(trueExpr)
+        Seq(trueExpr),
+        true
       )
 
       windowClassInstantiation <- make_class_instantiation_floating(

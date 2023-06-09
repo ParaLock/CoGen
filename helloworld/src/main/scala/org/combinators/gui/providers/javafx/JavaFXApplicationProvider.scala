@@ -112,7 +112,8 @@ trait JavaFXApplicationProvider extends BaseProvider {
       _ <- make_method_call(
         colConstraints,
         "setPercentWidth",
-        Seq(percentCols)
+        Seq(percentCols),
+        true
       )
 
 
@@ -126,7 +127,8 @@ trait JavaFXApplicationProvider extends BaseProvider {
       _ <- make_method_call(
         rowConstraints,
         "setPercentHeight",
-        Seq(percentRows)
+        Seq(percentRows),
+        true
       )
 
       // Row/Col loop -----------------------------
@@ -202,13 +204,15 @@ trait JavaFXApplicationProvider extends BaseProvider {
             _ <- make_method_call(
               labelClass,
               "setMaxSize",
-              Seq(maxVal, maxVal)
+              Seq(maxVal, maxVal),
+              true
             )
 
             _ <- make_method_call(
               labelClass,
               "setAlignment",
-              Seq(posCenter)
+              Seq(posCenter),
+              true
             )
 
             gridPaneStaticClass <- findRawClass(names.mangle("GridPane"))
@@ -216,7 +220,8 @@ trait JavaFXApplicationProvider extends BaseProvider {
             _ <- make_static_method_call(
               gridPaneStaticClass,
               "setConstraints",
-              Seq(labelClass, jVar, iVar)
+              Seq(labelClass, jVar, iVar),
+              true
             )
 
             _ <- make_chained_method_call(
@@ -285,13 +290,15 @@ trait JavaFXApplicationProvider extends BaseProvider {
         _ <- make_method_call(
           primaryStage,
           "setTitle",
-          Seq(title)
+          Seq(title),
+          true
         )
 
         _ <- make_method_call(
           primaryStage,
           "setScene",
-          Seq(sceneObj)
+          Seq(sceneObj),
+          true
         )
 
       } yield None
@@ -433,7 +440,7 @@ trait JavaFXApplicationProvider extends BaseProvider {
 
           textElementInst <- make_class_instantiation_floating(
             "TextElement",
-            Seq(msg)
+            Seq(msg),
           )
 
           pos <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, index)
@@ -479,7 +486,8 @@ trait JavaFXApplicationProvider extends BaseProvider {
         _ <- make_static_method_call(
           appClass,
           "launch",
-          Seq(funcArgs)
+          Seq(funcArgs),
+          true
         )
 
       } yield None

@@ -209,7 +209,6 @@ trait AnyParadigm {
     def noop(): Generator[MethodBodyContext, Unit] =
       AnyParadigm.capability(Noop())
 
-
     implicit val canOutputToConsole: Understands[MethodBodyContext, OutputToConsole[Expression]]
     def output(expr:Expression): Generator[MethodBodyContext, Unit] =
       AnyParadigm.capability(OutputToConsole[Expression](expr))

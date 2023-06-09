@@ -3,7 +3,7 @@ package org.combinators.ep.language.java     /*DI:LD:AI*/
 import com.github.javaparser.ast.body.{ClassOrInterfaceDeclaration, ConstructorDeclaration, MethodDeclaration}
 import com.github.javaparser.ast.{CompilationUnit, ImportDeclaration, Node}
 import com.github.javaparser.ast.expr.{CastExpr, LambdaExpr, Name, SimpleName}
-import com.github.javaparser.ast.stmt.{BlockStmt, CatchClause, ForEachStmt, ForStmt, SwitchEntry, SwitchStmt}
+import com.github.javaparser.ast.stmt.{BlockStmt, CatchClause, ForEachStmt, ForStmt, SwitchEntry, SwitchStmt, TryStmt}
 import com.github.javaparser.ast.visitor.Visitable
 import org.combinators.ep.generator.FreshNameProvider
 import org.combinators.ep.language.java.Syntax.MangledName
@@ -98,6 +98,10 @@ class FreshNameCleanup(nameInfo: Map[String, MangledName]) {
     }
 
     override def visit(n: ConstructorDeclaration, arg: Phase): Visitable = {
+      visitInNewScope(n, arg)(super.visit)
+    }
+
+    override def visit(n: TryStmt, arg: Phase): Visitable = {
       visitInNewScope(n, arg)(super.visit)
     }
 

@@ -4,7 +4,7 @@ import org.combinators.ep.generator.Command.Generator
 import org.combinators.ep.generator.{Command, Understands}
 import org.combinators.ep.generator.paradigm.{AnyParadigm, Apply}
 
-case class Exception[Expression,Stmt](exp:Expression) extends Command {
+case class Exception[Expression,Stmt, Type](exp: Expression, excepType: Option[Type]) extends Command {
   type Result = Stmt
 }
 
@@ -22,10 +22,10 @@ trait Exceptions[Context] extends FFI {
   import base.syntax._
 
   trait ExceptionCapabilities {
-    implicit val canRaise: Understands[Context, Exception[Expression, Statement]]
+    implicit val canRaise: Understands[Context, Exception[Expression, Statement, Type]]
 
-    def raise(exp: Expression): Generator[Context, Statement] =
-      AnyParadigm.capability(Exception[Expression, Statement](exp))
+    def raise(exp: Expression, excepType: Option[Type] = None): Generator[Context, Statement] =
+      AnyParadigm.capability(Exception[Expression, Statement, Type](exp, excepType))
 
     implicit val canAddExceptionHandler: Understands[Context, AddExceptionHandler[Expression, Statement, Context, Type, Name]]
 

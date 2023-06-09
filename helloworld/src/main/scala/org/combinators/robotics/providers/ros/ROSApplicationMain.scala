@@ -45,7 +45,10 @@ class ROSApplicationMain {
     generator.equalityInMethod
   )(
     generator.imperativeInConstructor,
-    generator.exceptionsInMethod
+    generator.exceptionsInMethod,
+    generator.parametricPolymorphism
+  )(
+   generator.generics
   )(
     new RoboticsDomain()
   )

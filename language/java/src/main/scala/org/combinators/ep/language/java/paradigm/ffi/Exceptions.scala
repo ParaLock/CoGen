@@ -91,13 +91,19 @@ class Exceptions[AP <: AnyParadigm](val base: AP) extends Excptns[MethodBodyCtxt
         }
       }
 
-      override implicit val canRaise: Understands[MethodBodyCtxt, ffi.Exception[Expression, Statement]] = {
-        new Understands[MethodBodyCtxt, ffi.Exception[Expression, Statement]] {
+      override implicit val canRaise: Understands[MethodBodyCtxt, ffi.Exception[Expression, Statement, Type]] = {
+        new Understands[MethodBodyCtxt, ffi.Exception[Expression, Statement, Type]] {
           def perform(
                        context: MethodBodyCtxt,
-                       command: ffi.Exception[Expression, Statement]
+                       command: ffi.Exception[Expression, Statement, Type]
                      ): (MethodBodyCtxt, Statement) = {
-            val ex = new ObjectCreationExpr(null, ObjectOriented.nameToType(ObjectOriented.fromComponents("RuntimeException")), new NodeList(command.exp))
+
+            var excepName = "RuntimeException"
+            if(command.excepType.isDefined) {
+              excepName = command.excepType.get.asString()
+            }
+
+            val ex = new ObjectCreationExpr(null, ObjectOriented.nameToType(ObjectOriented.fromComponents(excepName)), new NodeList(command.exp))
             val throwStatement = new ThrowStmt(ex)
             (context, throwStatement)
           }

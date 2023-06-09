@@ -11,6 +11,10 @@ case class AssignVariable[Expression, Statement](variable: Expression, value: Ex
   type Result = Statement
 }
 
+case class NameToExpression[Name, Expression](name: Name) extends Command {
+  type Result = Expression
+}
+
 case class LiftExpression[Expression, Statement](expr:Expression) extends Command {
   type Result = Statement
 }
@@ -47,6 +51,11 @@ trait Imperative[Context] {
     implicit val canAssignVariable: Understands[Context, AssignVariable[Expression, Statement]]
     def assignVar(variable: Expression, value: Expression): Generator[Context, Statement] =
       AnyParadigm.capability(AssignVariable[Expression, Statement](variable, value))
+
+    implicit val canNameToExpression: Understands[Context, NameToExpression[Name, Expression]]
+    def nameToExpression(name: Name): Generator[Context, Expression] =
+      AnyParadigm.capability(NameToExpression[Name, Expression](name))
+
 
     implicit val canLiftExpression: Understands[Context, LiftExpression[Expression, Statement]]
     def liftExpression(expr: Expression): Generator[Context, Statement] =

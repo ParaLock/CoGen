@@ -99,31 +99,40 @@ trait BaseProvider {
     import ooParadigm.methodBodyCapabilities._
     import paradigm.methodBodyCapabilities._
 
-    val myFunc: Expression => Generator[MethodBodyContext, paradigm.syntax.Expression] = {
-      (stmt) => {
-        if (addInline) {
-          for {
-            liftedStmt <- liftExpression(stmt)
-            _ <- addBlockDefinitions(Seq(liftedStmt))
-          } yield stmt
-        } else {
-          for {
-            liftedStmt <- liftExpression(stmt)
-          } yield stmt
-        }
-      }
-    }
-
     for {
       classType <- findClass(names.mangle(typeName))
       _ <- resolveAndAddImport(classType)
       stmt <- instantiateObject(classType, constructorParams)
-      _ <- myFunc(stmt)
+      liftedStmt <- liftExpression(stmt)
+      _ <- if(addInline) {
+        for {
+          _ <- addBlockDefinitions(Seq(liftedStmt))
+        } yield(None)
+      } else {
+        for {
+          _ <- noop()
+        } yield (None)
+      }
     } yield stmt
 
   }
 
+  def make_class_instantiation(
+                                classType: Type,
+                                varName: String,
+                                constructorParams: Seq[Expression]
+                              ): Generator[MethodBodyContext, paradigm.syntax.Expression] = {
+    import impParadigm.imperativeCapabilities._
+    import ooParadigm.methodBodyCapabilities._
+    import paradigm.methodBodyCapabilities._
 
+    for {
+      _ <- resolveAndAddImport(classType)
+      classObj <- instantiateObject(classType, constructorParams)
+      classObjName <- freshName(names.mangle(varName))
+      sceneObjVar <- declareVar(classObjName, classType, Some(classObj))
+    } yield sceneObjVar
+  }
 
   def make_class_instantiation(
                            typeName: String,
@@ -135,33 +144,11 @@ trait BaseProvider {
     import paradigm.methodBodyCapabilities._
 
     for {
-      classType <- findRawClass(names.mangle(typeName))
-      _ <- resolveAndAddImport(classType)
-      classObj <- instantiateObject(classType, constructorParams)
-      classObjName <- freshName(names.mangle(varName))
-      sceneObjVar <- declareVar(classObjName, classType, Some(classObj))
+      classType <- findClass(names.mangle(typeName))
+      sceneObjVar <- make_class_instantiation(classType, varName, constructorParams)
     } yield sceneObjVar
   }
 
-//  def make_class_instantiation_test(
-//                                typeName: String,
-//                                varName: String,
-//                                constructorParams: Seq[Expression]
-//                              ): Generator[ooParadigm.ConstructorContext, paradigm.syntax.Expression] = {
-//    import impParadigm.imperativeCapabilities._
-//    import ooParadigm.methodBodyCapabilities._
-//    //import ooParadigm.constructorCapabilities._
-//
-//    import paradigm.methodBodyCapabilities._
-//
-//    for {
-//      classType <- ooParadigm.constructorCapabilities.findRawClass(names.mangle(typeName))
-//      _ <- resolveAndAddImport[ooParadigm.ConstructorContext, Type](classType)
-//      classObj <- ooParadigm.constructorCapabilities.instantiateObject(classType, constructorParams)
-//      classObjName <- ooParadigm.constructorCapabilities.freshName(names.mangle(varName))
-//      sceneObjVar <- impConstructorParadigm.imperativeCapabilities.declareVar(classObjName, classType, Some(classObj))
-//    } yield sceneObjVar
-//  }
 
   def make_member_assignment(
                                      expr: Expression,
@@ -180,34 +167,12 @@ trait BaseProvider {
 
   }
 
-  def get_static_method_call(
-                               obj: Type,
-                               methodName: String,
-                               args: Seq[Expression]
-                             ): Generator[paradigm.MethodBodyContext, Expression] = {
-    import impParadigm.imperativeCapabilities._
-    import ooParadigm.methodBodyCapabilities._
-    import paradigm.methodBodyCapabilities._
-
-    for {
-
-      expr <- toStaticTypeExpression(obj)
-
-      func <- getMember(
-        expr,
-        names.mangle(methodName)
-      )
-      stmt <- apply(func, args)
-
-    } yield (stmt)
-
-  }
-
   def make_static_method_call(
                                obj: Type,
                                methodName: String,
-                               args: Seq[Expression]
-                           ): Generator[paradigm.MethodBodyContext, Unit] = {
+                               args: Seq[Expression],
+                               addInline: Boolean
+                           ): Generator[paradigm.MethodBodyContext, Expression] = {
     import impParadigm.imperativeCapabilities._
     import ooParadigm.methodBodyCapabilities._
     import paradigm.methodBodyCapabilities._
@@ -216,20 +181,22 @@ trait BaseProvider {
 
       expr <- toStaticTypeExpression(obj)
 
-      _ <- make_method_call(
+      call <- make_method_call(
         expr,
         methodName,
-        args
+        args,
+        addInline
       )
 
-    } yield ()
+    } yield (call)
 
   }
 
   def make_method_call(
                       method: Expression,
-                      args: Seq[Expression]
-                      ): Generator[paradigm.MethodBodyContext, Unit] = {
+                      args: Seq[Expression],
+                      addInline: Boolean
+                      ): Generator[paradigm.MethodBodyContext, Expression] = {
 
     import impParadigm.imperativeCapabilities._
     import ooParadigm.methodBodyCapabilities._
@@ -239,16 +206,23 @@ trait BaseProvider {
 
       stmt <- apply(method, args)
       liftedStmt <- liftExpression(stmt)
-      _ <- addBlockDefinitions(Seq(liftedStmt))
-
-    } yield()
-
+      _ <- if(addInline) {
+        for {
+          _ <- addBlockDefinitions(Seq(liftedStmt))
+        } yield(None)
+      } else {
+        for {
+          _ <- noop()
+        } yield (None)
+      }
+    } yield(stmt)
   }
 
   def make_method_call(
                    obj: Expression,
                    methodName: String,
-                   args: Seq[Expression]
+                   args: Seq[Expression],
+                   addInline: Boolean
                  ): Generator[paradigm.MethodBodyContext, Expression] = {
     import impParadigm.imperativeCapabilities._
     import ooParadigm.methodBodyCapabilities._
@@ -260,9 +234,11 @@ trait BaseProvider {
         obj,
         names.mangle(methodName)
       )
-      stmt <- apply(func, args)
-      liftedStmt <- liftExpression(stmt)
-      _ <- addBlockDefinitions(Seq(liftedStmt))
+      stmt <- make_method_call(
+        func,
+        args,
+        addInline
+      )
 
     } yield (stmt)
   }
