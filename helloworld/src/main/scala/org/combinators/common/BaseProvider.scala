@@ -69,6 +69,24 @@ trait BaseProvider {
   }
 
 
+  def make_field_assignment(
+                                   expr: Expression,
+                                   fieldName: String
+                                 ): Generator[MethodBodyContext, Option[paradigm.syntax.Expression]] = {
+    import impParadigm.imperativeCapabilities._
+    import ooParadigm.methodBodyCapabilities._
+    import paradigm.methodBodyCapabilities._
+    for {
+
+      selfRef <- selfReference()
+      fieldVar <- getMember(selfRef, names.mangle(fieldName))
+      assignedVarExpr <- assignVar(fieldVar, expr)
+      _ <- addBlockDefinitions(Seq(assignedVarExpr))
+
+    } yield None
+
+  }
+
   def make_field_class_assignment(
                                       className: String,
                                       fieldName: String,

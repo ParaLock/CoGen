@@ -115,6 +115,13 @@ trait AnyParadigm extends AP {
             (context.copy(resolver = context.resolver.copy(_methodTypeResolution = newLookup)), ())
           }
         }
+      override implicit val canNoop: Understands[ProjectCtxt, Noop] =
+        new Understands[ProjectCtxt, Noop] {
+          /** Returns the updated context and the result of the command. */
+          override def perform(context: ProjectCtxt, command: Noop): (ProjectCtxt, Unit) = {
+            (context, ())
+          }
+        }
     }
 
   val compilationUnitCapabilities: CompilationUnitCapabilities =

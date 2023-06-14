@@ -382,6 +382,13 @@ trait ObjectOriented[AP <: AnyParadigm] extends OO {
             (context.copy(resolver = updatedResolver), freshName)
           }
         }
+      override implicit val canNoop: Understands[ClassCtxt, Noop] =
+        new Understands[ClassCtxt, Noop] {
+          /** Returns the updated context and the result of the command. */
+          override def perform(context: ClassCtxt, command: Noop): (ClassCtxt, Unit) = {
+            (context, ())
+          }
+        }
     }
 
   val constructorCapabilities: ConstructorCapabilities =

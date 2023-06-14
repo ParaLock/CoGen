@@ -3,7 +3,7 @@ package org.combinators.ep.language.java.paradigm    /*DI:LD:AI*/
 import com.github.javaparser.ast.`type`.{ClassOrInterfaceType, TypeParameter}
 import org.combinators.ep.generator.{Command, Understands}
 import org.combinators.ep.generator.paradigm.{Generics => Gen, AnyParadigm => _, ObjectOriented => _, _}
-import org.combinators.ep.language.java.TypeParamCtxt
+import org.combinators.ep.language.java.{MethodBodyCtxt, TypeParamCtxt}
 
 import scala.jdk.CollectionConverters._
 
@@ -15,6 +15,26 @@ trait Generics[AP <: AnyParadigm] extends Gen {
   import base.syntax._
   import ooParadigm._
   import ppolyParadigm._
+
+  val methodBodyCapabilities: MethodBodyCapabilities =
+    new MethodBodyCapabilities {
+      override implicit val canApplyTypeInMethod: Understands[MethodBodyCtxt, Apply[Type, Type, Type]] =
+        new Understands[MethodBodyCtxt, Apply[Type, Type, Type]] {
+          /** Returns the updated context and the result of the command. */
+          override def perform(context: MethodBodyCtxt, command: Apply[Type, Type, Type]): (MethodBodyCtxt, Type) = {
+            val resultTpe = command.functional.clone().asClassOrInterfaceType()
+            val boxedArguments = command.arguments.map { arg =>
+              if (arg.isPrimitiveType) arg.asPrimitiveType().toBoxedType
+              else arg.clone()
+            }
+            if (boxedArguments.nonEmpty) {
+              resultTpe.setTypeArguments(boxedArguments: _*)
+            }
+            (context, resultTpe)
+          }
+        }
+    }
+
   val classCapabilities: ClassCapabilities =
     new ClassCapabilities {
       implicit val canAddTypeParameterInClass: Understands[ClassContext, AddTypeParameter[Name, TypeParameterContext]] =

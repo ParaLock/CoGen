@@ -13,6 +13,8 @@ import org.combinators.robotics.domain_model.ros.Node
 import org.combinators.robotics.examples.RoboticsDomain
 import org.combinators.robotics.domain_model.ros._
 
+import java.io.File
+
 
 trait ROSApplicationProvider extends BaseProvider {
 
@@ -43,6 +45,7 @@ trait ROSApplicationProvider extends BaseProvider {
     } yield res
   }
 
+  //ROS_NODE_MISC *******************************************************************************************
   def make_ros_node_constructor(node: Node): Generator[ConstructorContext, Unit] = {
 
     import constructorCapabilities._
@@ -50,9 +53,7 @@ trait ROSApplicationProvider extends BaseProvider {
     for {
 
       self <- selfReference()
-
-      _ <- make_method_call_in_constructor(self, "preinitCommon", Seq.empty)
-      _ <- make_method_call_in_constructor(self, "preinitRole", Seq.empty)
+      _ <- make_method_call_in_constructor(self, "init", Seq.empty)
 
     } yield(None)
   }
@@ -85,28 +86,25 @@ trait ROSApplicationProvider extends BaseProvider {
     }
 
     for {
-
       _ <- addMethod(names.mangle("getDefaultNodeName"), make_method())
-
     } yield (None)
 
-//    public
-//    final GraphName getDefaultNodeName () {
-//      return GraphName.of(this.rosNodeName);
-//    }
-
   }
+  //**********************************************************************************************************
 
-  def make_ros_node_client_role_init(node: Node, varInfo: Tuple2[String, String]): Generator[MethodBodyContext, Unit] = {
+  //ROS_NODE_ROLE_ONSTART ************************************************************************************
+  def make_ros_node_client_role_onstart(node: Node): Generator[MethodBodyContext, Unit] = {
 
     import ooParadigm.methodBodyCapabilities._
     import impParadigm.imperativeCapabilities._
     import paradigm.methodBodyCapabilities._
     import exceptions.exceptionCapabilities._
-    import polymorphics.methodBodyCapabilities._
+    import generics.methodBodyCapabilities._
 
     var role = node.role.asInstanceOf[roles.Client]
     var excepName = names.mangle("serviceNotFoundException")
+
+    var fields = get_role_fields(node)
 
     for {
 
@@ -130,7 +128,7 @@ trait ROSApplicationProvider extends BaseProvider {
         for {
 
           self <- selfReference()
-          varName <- getMember(self, names.mangle(varInfo._1))
+          varName <- getMember(self, names.mangle(fields._1))
 
           serviceClientcls <- findClass(names.mangle("ServiceClient"))
           requestCls <- findClass(names.mangle(role.requestMsgType))
@@ -233,9 +231,6 @@ trait ROSApplicationProvider extends BaseProvider {
 
               _ <- addBlockDefinitions(Seq(excep))
 
-
-              //throw new RosRuntimeException(serviceNotFoundException);
-
             } yield None
           )
         )
@@ -247,21 +242,291 @@ trait ROSApplicationProvider extends BaseProvider {
 
   }
 
-//  def make_ros_node_server_role_init(): Generator[MethodBodyContext, Unit] = {
-//
-//
-//  }
-//
-//  def make_ros_node_publisher_role_init(): Generator[MethodBodyContext, Unit] = {
-//
-//
-//  }
-//
-//  def make_ros_node_subscriber_role_init(): Generator[MethodBodyContext, Unit] = {
-//
-//
-//  }
-  def make_ros_node_role_init(node: Node, varInfo: Tuple2[String, String]): Generator[MethodBodyContext, Unit] = {
+  def make_ros_node_server_role_onstart(node: Node): Generator[MethodBodyContext, Unit] = {
+
+    import ooParadigm.methodBodyCapabilities._
+    import impParadigm.imperativeCapabilities._
+    import paradigm.methodBodyCapabilities._
+    import exceptions.exceptionCapabilities._
+    import generics.methodBodyCapabilities._
+
+    var role = node.role.asInstanceOf[roles.Server]
+    var fields = get_role_fields(node)
+
+    for {
+
+      args <- getArguments()
+      (_, _, connectedNodeParam) = args.head
+
+      getLogFunc <- getMember(
+        connectedNodeParam,
+        names.mangle("getLog")
+      )
+
+      getLogCall <- make_method_call(
+        getLogFunc,
+        Seq.empty,
+        false
+      )
+
+      _ <- make_field_assignment(
+        getLogCall,
+        "log"
+      )
+
+      self <- selfReference()
+      varName <- getMember(self, names.mangle(fields._1))
+
+      serviceServercls <- findClass(names.mangle("ServiceServer"))
+      requestCls <- findClass(names.mangle(role.requestMsgType))
+      responseCls <- findClass(names.mangle(role.responseMsgType))
+
+      msgType <- findClass(
+        names.mangle(role.payloadMsgType)
+      )
+
+      msgTypeType <- get_static_class_member(
+        msgType,
+        "_TYPE"
+      )
+
+      methodRef <- getMethodReference(
+        self,
+        names.mangle("onRequest")
+      )
+
+      clientCreateExpr <- make_method_call(
+        connectedNodeParam,
+        "newServiceServer",
+        Seq(varName, msgTypeType, methodRef),
+        false
+      )
+
+      serviceServerclsWithParams <- applyType(
+        serviceServercls,
+        Seq(requestCls, responseCls)
+      )
+
+      serviceServerVar <- declareVar(
+        names.mangle("serviceServer"),
+        serviceServerclsWithParams,
+        Some(clientCreateExpr)
+      )
+
+      logVar <- getMember(
+        self,
+        names.mangle("log")
+      )
+
+      msg1 <- paradigm.methodBodyCapabilities.reify(
+        TypeRep.String,
+        "Created ROS Service Server["
+      )
+
+      msg2 <- paradigm.methodBodyCapabilities.reify(
+        TypeRep.String,
+        "] in URI:"
+      )
+
+
+      getNameFunc <- make_method_call(
+        serviceServerVar,
+        "getName",
+        Seq.empty,
+        false
+      )
+
+      getUriFunc <- make_method_call(
+        serviceServerVar,
+        "getUri",
+        Seq.empty,
+        false
+      )
+
+      msgExpr1 <- ffiArithmetic.arithmeticCapabilities.add(
+        msg1,
+        getNameFunc
+      )
+
+      msgExpr2 <- ffiArithmetic.arithmeticCapabilities.add(
+        msgExpr1,
+        msg2
+      )
+
+      msgExpr3 <- ffiArithmetic.arithmeticCapabilities.add(
+        msgExpr2,
+        getUriFunc
+      )
+
+      _ <- make_method_call(
+        logVar,
+        "info",
+        Seq(msgExpr3),
+        true
+      )
+
+    } yield (None)
+
+
+  }
+
+  def make_ros_node_publisher_role_onstart(node: Node): Generator[MethodBodyContext, Unit] = {
+    import ooParadigm.methodBodyCapabilities._
+    import impParadigm.imperativeCapabilities._
+    import paradigm.methodBodyCapabilities._
+    import exceptions.exceptionCapabilities._
+    import generics.methodBodyCapabilities._
+
+    var fields = get_role_fields(node)
+    var role = node.role.asInstanceOf[roles.Publisher]
+    for {
+
+      self <- selfReference()
+
+      logCls <- findClass(names.mangle("Log"))
+
+      args <- getArguments()
+      (_, _, connectedNodeParam) = args.head
+
+      getLogFunc <- make_method_call(
+        connectedNodeParam,
+        "getLog",
+        Seq.empty,
+        false
+      )
+
+      logVar <- declareVar(names.mangle("log"), logCls, Some(getLogFunc))
+
+      publisherCls <- findClass(
+        names.mangle("Publisher")
+      )
+
+      msgType <- findClass(
+        names.mangle(role.msgType)
+      )
+
+      msgTypeType <- get_static_class_member(
+        msgType,
+        "_TYPE"
+      )
+
+      varName <- getMember(self, names.mangle(fields._1))
+
+      publisherCreateExpr <- make_method_call(
+        connectedNodeParam,
+        "newPublisher",
+        Seq(varName, msgTypeType),
+        false
+      )
+
+      publisherClsWithParams <- applyType(
+        publisherCls,
+        Seq(msgType)
+      )
+
+      publisherVar <- declareVar(
+        names.mangle("publisher"),
+        publisherClsWithParams,
+        Some(publisherCreateExpr)
+      )
+
+      loopInst <- make_class_instantiation_floating(
+        "ROSNode" + node.name + "Loop",
+        Seq(logVar, publisherVar),
+        false
+      )
+
+      _ <- make_method_call(
+        connectedNodeParam,
+        "executeCancellableLoop",
+        Seq(loopInst),
+        true
+      )
+
+    } yield(None)
+
+  }
+
+  def make_ros_node_subscriber_role_onstart(node: Node): Generator[MethodBodyContext, Unit] = {
+    import ooParadigm.methodBodyCapabilities._
+    import impParadigm.imperativeCapabilities._
+    import paradigm.methodBodyCapabilities._
+    import exceptions.exceptionCapabilities._
+    import generics.methodBodyCapabilities._
+
+    var fields = get_role_fields(node)
+    var role = node.role.asInstanceOf[roles.Subscriber]
+
+    for {
+
+      self <- selfReference()
+
+      logCls <- findClass(names.mangle("Log"))
+
+      args <- getArguments()
+      (_, _, connectedNodeParam) = args.head
+
+      getLogFunc <- make_method_call(
+        connectedNodeParam,
+        "getLog",
+        Seq.empty,
+        false
+      )
+
+      logVar <- declareVar(names.mangle("log"), logCls, Some(getLogFunc))
+
+      subscriberCls <- findClass(
+        names.mangle("Subscriber")
+      )
+
+      msgType <- findClass(
+        names.mangle(role.msgType)
+      )
+
+      msgTypeType <- get_static_class_member(
+        msgType,
+        "_TYPE"
+      )
+
+      varName <- getMember(self, names.mangle(fields._1))
+
+      subscriberCreateExpr <- make_method_call(
+        connectedNodeParam,
+        "newSubscriber",
+        Seq(varName, msgTypeType),
+        false
+      )
+
+      subscriberClsWithParams <- applyType(
+        subscriberCls,
+        Seq(msgType)
+      )
+
+      subscriberVar <- declareVar(
+        names.mangle("subscriber"),
+        subscriberClsWithParams,
+        Some(subscriberCreateExpr)
+      )
+
+      listenerInst <- make_class_instantiation_floating(
+        "ROSNode" + node.name + "Listener",
+        Seq(logVar),
+        false
+      )
+
+      _ <- make_method_call(
+        subscriberVar,
+        "addMessageListener",
+        Seq(listenerInst),
+        true
+      )
+
+    } yield (None)
+
+  }
+
+  //
+  def make_ros_node_role_onstart(node: Node): Generator[MethodBodyContext, Unit] = {
       import ooParadigm.methodBodyCapabilities._
       import impParadigm.imperativeCapabilities._
       import paradigm.methodBodyCapabilities._
@@ -271,10 +536,10 @@ trait ROSApplicationProvider extends BaseProvider {
       for {
 
         _ <- roleType match {
-          case "Client" => for { _ <- make_ros_node_client_role_init(node, varInfo) } yield(None)
-          case "Server" => for { _ <- print_message("server stuff") } yield (None)
-          case "Publisher" => for { _ <- print_message("Publisher stuff") } yield (None)
-          case "Subscriber" => for { _ <- print_message("Subscriber stuff") } yield (None)
+          case "Client" => for { _ <- make_ros_node_client_role_onstart(node) } yield(None)
+          case "Server" => for { _ <- make_ros_node_server_role_onstart(node) } yield (None)
+          case "Publisher" => for { _ <- make_ros_node_publisher_role_onstart(node) } yield (None)
+          case "Subscriber" => for { _ <- make_ros_node_subscriber_role_onstart(node) } yield (None)
           case _ => for { _ <- print_message("Unknown role type") } yield (None)
         }
 
@@ -282,7 +547,8 @@ trait ROSApplicationProvider extends BaseProvider {
 
   }
 
-  def make_ros_node_onstart(node: Node, varInfo: Tuple2[String, String]): Generator[ClassContext, Unit] = {
+  //**********************************************************************************************************
+  def make_ros_node_onstart(node: Node): Generator[ClassContext, Unit] = {
     import ooParadigm.classCapabilities._
 
     def make_method(): Generator[MethodBodyContext, Option[Expression]] = {
@@ -303,7 +569,7 @@ trait ROSApplicationProvider extends BaseProvider {
           Seq((names.mangle("connectedNode"), connectedNodeCls))
         )
 
-        _ <- make_ros_node_role_init(node, varInfo)
+        _ <- make_ros_node_role_onstart(node)
       } yield (None)
 
     }
@@ -315,10 +581,83 @@ trait ROSApplicationProvider extends BaseProvider {
     } yield (None)
   }
 
-  def make_ros_node_common_preinit(node: Node): Generator[ClassContext, Unit] = {
+  //ROS_NODE_INIT *****************************************************************************************
+
+  def make_ros_node_init(node: Node): Generator[ClassContext, Unit] = {
     import ooParadigm.classCapabilities._
 
-    def make_method(): Generator[MethodBodyContext, Option[Expression]] = {
+    val fields = get_role_fields(node)
+
+    def make_init_role_fields(): Generator[ClassContext, Option[Expression]] = {
+      import ooParadigm.classCapabilities._
+      import impParadigm.imperativeCapabilities._
+      for {
+
+        stringType <- toTargetLanguageType(TypeRep.String)
+        _ <- addField(names.mangle(fields._1), stringType)
+
+      } yield(None)
+    }
+
+    def make_init_common_fields(): Generator[ClassContext, Option[Expression]] = {
+      import ooParadigm.classCapabilities._
+      import impParadigm.imperativeCapabilities._
+
+      for {
+        stringType <- toTargetLanguageType(TypeRep.String)
+        _ <- addField(
+          names.mangle("nodeName"),
+          stringType,
+        )
+      } yield(None)
+    }
+
+    def make_init_role_stmts(): Generator[MethodBodyContext, Option[Expression]] = {
+      import ooParadigm.methodBodyCapabilities._
+      import impParadigm.imperativeCapabilities._
+      import paradigm.methodBodyCapabilities._
+
+      for {
+
+        self <- selfReference()
+
+        unitType <- toTargetLanguageType(TypeRep.Unit)
+        _ <- setReturnType(unitType)
+
+        varVal <- paradigm.methodBodyCapabilities.reify(
+          TypeRep.String,
+          fields._2
+        )
+
+        _ <- make_member_assignment(
+          varVal,
+          fields._1
+        )
+
+        varName <- getMember(self, names.mangle(fields._1))
+
+        preconditionsCls <- findClass(names.mangle("Preconditions"))
+        stringUtlsCls <- findClass(names.mangle("StringUtils"))
+
+        isNotBlankFunc <- make_static_method_call(
+          stringUtlsCls,
+          "isNotBlank",
+          Seq(varName),
+          false
+        )
+
+        _ <- make_static_method_call(
+          preconditionsCls,
+          "checkArgument",
+          Seq(isNotBlankFunc),
+          true
+        )
+
+      } yield(None)
+
+    }
+
+    def make_init_common_stmts(): Generator[MethodBodyContext, Option[Expression]] = {
       import ooParadigm.methodBodyCapabilities._
       import impParadigm.imperativeCapabilities._
       import paradigm.methodBodyCapabilities._
@@ -365,20 +704,202 @@ trait ROSApplicationProvider extends BaseProvider {
     }
 
     for {
+      _ <- make_init_common_fields()
+      _ <- make_init_role_fields()
 
-      _ <- addMethod(names.mangle("preinitCommon"), make_method())
+      _ <- addMethod(
+        names.mangle("init"),
+        for {
+
+          _ <- make_init_common_stmts()
+          _ <- make_init_role_stmts()
+
+        } yield(None)
+      )
 
     } yield(None)
   }
 
-  def make_ros_node_role_preinit(node: Node, varInfo: Tuple2[String, String]): Generator[ClassContext, Unit] = {
-    import ooParadigm.classCapabilities._
+  //**********************************************************************************************************
 
+  //ROS_NODE_ROLE_FIELDS *************************************************************************************
+  def get_role_fields(node: Node): Tuple2[String, String] = {
 
-    def make_method(): Generator[MethodBodyContext, Option[Expression]] = {
+    val roleType = node.role.getClass.getSimpleName()
+
+    roleType match {
+      case "Client" => ("rosServiceName", node.role.asInstanceOf[roles.Client].serviceName)
+      case "Server" => ("rosServiceName", node.role.asInstanceOf[roles.Server].serviceName)
+      case "Publisher" => ("rosTopicName", node.role.asInstanceOf[roles.Publisher].topic)
+      case "Subscriber" => ("rosTopicName", node.role.asInstanceOf[roles.Subscriber].topic)
+      case _ => ("placeholder", "placeholder")
+    }
+  }
+
+  def make_ros_node_publisher_fields(node: Node): Generator[ClassContext, Unit] = {
+    import classCapabilities._
+    for {
+      _ <- noop()
+    } yield(None)
+  }
+
+  def make_ros_node_subscriber_fields(node: Node): Generator[ClassContext, Unit] = {
+    import classCapabilities._
+    for {
+      _ <- noop()
+    } yield (None)
+
+  }
+
+  def make_ros_node_server_fields(node: Node): Generator[ClassContext, Unit] = {
+
+    import classCapabilities._
+
+    for {
+      logType <- findClass(names.mangle("Log"))
+      _ <- addField(names.mangle("log"), logType)
+    } yield (None)
+
+  }
+
+  def make_ros_node_client_fields(node: Node): Generator[ClassContext, Unit] = {
+    import classCapabilities._
+
+    for {
+      _ <- noop()
+    } yield (None)
+  }
+
+  def make_ros_node_role_fields(node: Node): Generator[ClassContext, Unit] = {
+
+    import classCapabilities._
+    val roleType = node.role.getClass.getSimpleName()
+
+    for {
+
+      _ <- roleType match {
+        case "Client"     => for { _ <- make_ros_node_client_fields(node)        } yield (None)
+        case "Server"     => for { _ <- make_ros_node_server_fields(node)        } yield (None)
+        case "Publisher"  => for { _ <- make_ros_node_publisher_fields(node)     } yield (None)
+        case "Subscriber" => for { _ <- make_ros_node_subscriber_fields(node)    } yield (None)
+        case _            => for { _ <- noop()                                   } yield (None)
+      }
+
+    } yield (None)
+
+  }
+
+  //**********************************************************************************************************
+
+  //ROS_NODE_ROLE_METHODS ************************************************************************************
+  def make_ros_node_server_methods(node: Node): Generator[ClassContext, Unit] = {
+    import classCapabilities._
+    for {
+      _ <- noop()
+    } yield (None)
+  }
+
+  def make_ros_node_client_methods(node: Node): Generator[ClassContext, Unit] = {
+    import classCapabilities._
+
+    for {
+      _ <- noop()
+    } yield (None)
+  }
+
+  def make_ros_node_subscriber_methods(node: Node): Generator[ClassContext, Unit] = {
+    import classCapabilities._
+
+    for {
+      _ <- noop()
+    } yield (None)
+  }
+
+  def make_ros_node_publisher_methods(node: Node): Generator[ClassContext, Unit] = {
+    import classCapabilities._
+
+    for {
+      _ <- noop()
+    } yield (None)
+  }
+
+  def make_ros_node_role_methods(node: Node): Generator[ClassContext, Unit] = {
+
+    import classCapabilities._
+    val roleType = node.role.getClass.getSimpleName()
+
+    for {
+
+      _ <- roleType match {
+        case "Client" => for {_ <- make_ros_node_client_methods(node)} yield (None)
+        case "Server" => for {_ <- make_ros_node_server_methods(node)} yield (None)
+        case "Publisher" => for {_ <- make_ros_node_publisher_methods(node)} yield (None)
+        case "Subscriber" => for {_ <- make_ros_node_subscriber_methods(node)} yield (None)
+        case _ => for {_ <- noop()} yield (None)
+      }
+
+    } yield (None)
+
+  }
+
+  //**********************************************************************************************************
+
+  //ROS_NODE_LISTENER ****************************************************************************************
+  def make_ros_node_listener(node: Node): Generator[ClassContext, Unit] = {
+    import classCapabilities._
+    val roleType = node.role.getClass.getSimpleName()
+
+    for {
+
+      _ <- roleType match {
+        case "Client" => for {_ <- noop()} yield (None)
+        case "Server" => for {_ <- noop()} yield (None)
+        case "Publisher" => for {_ <- noop()} yield (None)
+        case "Subscriber" => for {_ <- noop()} yield (None)
+        case _ => for {_ <- noop()} yield (None)
+      }
+
+    } yield (None)
+  }
+
+  def make_ros_node_listeners(): Generator[ProjectContext, Unit] = {
+    import ooParadigm.projectCapabilities._
+    for {
+      _ <- forEach(domain.nodes) { (node: Node) =>
+        for {
+          _ <- if (node.role.isInstanceOf[roles.Client] || node.role.isInstanceOf[roles.Subscriber]) {
+            addClassToProject(
+              make_ros_node_listener(node),
+              names.mangle("ROSNode" + node.name + "Listener")
+            )
+          } else {
+            paradigm.projectCapabilities.noop()
+          }
+        } yield ()
+      }
+    } yield ()
+  }
+
+  //**********************************************************************************************************
+
+  //ROS_NODE_LOOP ********************************************************************************************
+
+  def make_ros_node_client_loop(node: Node): Generator[ClassContext, Unit] = {
+
+    import classCapabilities._
+    import generics.classCapabilities._
+
+    val role: roles.Client = node.role.asInstanceOf[roles.Client]
+    var loopFragName: String = node.loopFragment
+
+    val fragmentFile = new File(loopFragName)
+    val fragmentClassName = fragmentFile.getName.split("\\.").dropRight(1).mkString(".")
+
+    def make_loop_method(): Generator[MethodBodyContext, Option[Expression]] = {
+      import paradigm.methodBodyCapabilities._
       import ooParadigm.methodBodyCapabilities._
       import impParadigm.imperativeCapabilities._
-      import paradigm.methodBodyCapabilities._
+      import exceptions.exceptionCapabilities._
 
       for {
 
@@ -387,102 +908,162 @@ trait ROSApplicationProvider extends BaseProvider {
         unitType <- toTargetLanguageType(TypeRep.Unit)
         _ <- setReturnType(unitType)
 
-        varVal <- paradigm.methodBodyCapabilities.reify(
-          TypeRep.String,
-          varInfo._2
+        serviceClientVar <- getMember(self, names.mangle("serviceClient"))
+        newMsgFunc <- getMember(serviceClientVar, names.mangle("newMessage"))
+
+        newMsgInvoke <- make_method_call(newMsgFunc, Seq.empty, false)
+
+        requestCls <- findClass(names.mangle(role.requestMsgType))
+
+        requestVar <- declareVar(
+          names.mangle("request"),
+          requestCls,
+          Some(newMsgInvoke)
         )
 
-        _ <- make_member_assignment(
-          varVal,
-          varInfo._1
-        )
+        loopCls <- findClass(names.mangle(fragmentClassName))
+        logVar <- getMember(self, names.mangle("log"))
 
-        varName <- getMember(self, names.mangle(varInfo._1))
-
-        preconditionsCls <- findClass(names.mangle("Preconditions"))
-        stringUtlsCls <- findClass(names.mangle("StringUtils"))
-
-        isNotBlankFunc <- make_static_method_call(
-          stringUtlsCls,
-          "isNotBlank",
-          Seq(varName),
-          false
-        )
 
         _ <- make_static_method_call(
-          preconditionsCls,
-          "checkArgument",
-          Seq(isNotBlankFunc),
+          loopCls,
+          "run",
+          Seq(requestVar, logVar),
           true
         )
 
+        responseListenerVar <- getMember(self, names.mangle("responseListener"))
 
+        _ <- make_method_call(
+          serviceClientVar,
+          "call",
+          Seq(requestVar, responseListenerVar),
+          true
+        )
 
-      } yield (None)
+      } yield(None)
+    }
+
+    def make_constructor(serviceClientCls: Type, logCls: Type, listenerCls: Type): Generator[ConstructorContext, Unit] = {
+      import ooParadigm.constructorCapabilities._
+      import impConstructorParadigm.imperativeCapabilities._
+
+      for {
+
+        _ <- setParameters(Seq(
+          (names.mangle("_serviceClient"), serviceClientCls),
+          (names.mangle("_log"), logCls),
+          (names.mangle("_responseListener"), listenerCls),
+        ))
+
+        self <- selfReference()
+
+        logMember <- getMember(self, names.mangle("log"))
+        serviceMember <- getMember(self, names.mangle("serviceClient"))
+        responseListenerMember <- getMember(self, names.mangle("responseListener"))
+
+        params <- getArguments()
+        (_, _, _serviceClientVar) = params(0)
+        (_, _, _logVar) = params(1)
+        (_, _, _responseListenerVar) = params(2)
+
+        var1 <- assignVar(logMember, _logVar)
+        var2 <- assignVar(serviceMember, _serviceClientVar)
+        var3 <- assignVar(responseListenerMember, _responseListenerVar)
+
+        _ <- addBlockDefinitions(Seq(var1, var2, var3))
+
+      } yield(None)
     }
 
     for {
 
-      stringType <- toTargetLanguageType(TypeRep.String)
-      _ <- addField(names.mangle(varInfo._1), stringType)
-      _ <- addMethod(names.mangle("preinitRole"), make_method())
+      cancelableLoopCls <- findClass(names.mangle("CancellableLoop"))
 
-    } yield (None)
+      _ <- addParent(cancelableLoopCls)
+
+      serviceClientCls <- findClass(names.mangle("ServiceClient"))
+      requestCls <- findClass(names.mangle(role.requestMsgType))
+      responseCls <- findClass(names.mangle(role.responseMsgType))
+      serviceClientClsWithParams <- applyType (
+        serviceClientCls,
+        Seq(requestCls, responseCls)
+      )
+
+      _ <- addField(names.mangle("serviceClient"), serviceClientClsWithParams)
+
+      logCls <- findClass(names.mangle("Log"))
+      _ <- addField(names.mangle("log"), logCls)
+
+      serviceResponseListenerCls <- findClass(names.mangle("ServiceResponseListener"))
+      serviceResponseListenerClsWithParams <- applyType(
+        serviceResponseListenerCls,
+        Seq(responseCls)
+      )
+      _ <- addField(names.mangle("responseListener"), serviceResponseListenerClsWithParams)
+
+      _ <- addConstructor(
+        make_constructor(
+          serviceClientClsWithParams,
+          logCls,
+          serviceResponseListenerClsWithParams
+        )
+      )
+
+      interruptableExcep <- findClass(names.mangle("InterruptedException"))
+
+      _ <- addMethod(
+        names.mangle("loop"),
+        make_loop_method(),
+        false,
+        Seq(interruptableExcep)
+      )
+
+
+    } yield(None)
 
   }
 
- def make_ros_node(node: Node): Generator[ClassContext, Unit] = {
-
-   val roleType = node.role.getClass.getSimpleName()
-   val varInfo = roleType match {
-     case "Client" => ("rosServiceName", node.role.asInstanceOf[roles.Client].serviceName)
-     case "Server" => ("rosServiceName", node.role.asInstanceOf[roles.Server].serviceName)
-     case "Publisher" => ("rosTopicName", node.role.asInstanceOf[roles.Publisher].topic)
-     case "Subscriber" => ("rosTopicName", node.role.asInstanceOf[roles.Subscriber].topic)
-     case _ => ("placeholder", "placeholder")
-   }
-
-   import classCapabilities._
-   for {
-
-     stringType <- toTargetLanguageType(TypeRep.String)
-
-     appClass <- findClass(names.mangle("AbstractNodeMain"))
-     _ <- addParent(appClass)
-
-     _ <- addField(
-       names.mangle("nodeName"),
-       stringType,
-     )
-
-     _ <- addConstructor(make_ros_node_constructor(node))
-     _ <- make_ros_node_common_preinit(node)
-     _ <- make_ros_node_role_preinit(node, varInfo)
-
-     _ <- make_ros_node_onstart(node, varInfo)
-     _ <- make_ros_node_name_getter()
-
-
-   } yield(None)
-
- }
+//  def make_ros_node_publisher_loop(node: Node): Generator[ClassContext, Unit] = {
 //
-
-//  def make_ros_node_subscriber(role: roles.Subscriber): Generator[ClassContext, Unit] = {
 //
 //  }
-//
-//  def make_ros_node_publisher(role: roles.Publisher): Generator[ClassContext, Unit] = {
-//
-//  }
-//
-//  def make_ros_node_client(role: roles.Client): Generator[ClassContext, Unit] = {
-//
-//  }
-//
-//  def make_ros_node_server(role: roles.Server): Generator[ClassContext, Unit] = {
-//
-//  }
+
+  def make_ros_node_loop(node: Node): Generator[ClassContext, Unit] = {
+    import classCapabilities._
+    val roleType = node.role.getClass.getSimpleName()
+
+    for {
+
+      _ <- roleType match {
+        case "Client" => for {_ <- make_ros_node_client_loop(node)} yield (None)
+        case "Server" => for {_ <- noop()} yield (None)
+        case "Publisher" => for {_ <- noop()} yield (None)
+        case "Subscriber" => for {_ <- noop()} yield (None)
+        case _ => for {_ <- noop()} yield (None)
+      }
+
+    } yield (None)
+  }
+  def make_ros_node_loops(): Generator[ProjectContext, Unit] = {
+    import ooParadigm.projectCapabilities._
+    for {
+      _ <- forEach(domain.nodes) { (node: Node) =>
+        for {
+          _ <- if (node.role.isInstanceOf[roles.Client] || node.role.isInstanceOf[roles.Publisher]) {
+            addClassToProject(
+              make_ros_node_loop(node),
+              names.mangle("ROSNode" + node.name + "Loop")
+            )
+          } else {
+            paradigm.projectCapabilities.noop()
+          }
+        } yield ()
+      }
+    } yield ()
+  }
+
+  //**********************************************************************************************************
 
   def make_main_func(): Generator[paradigm.MethodBodyContext, Option[Expression]] = {
     import paradigm.methodBodyCapabilities._
@@ -516,36 +1097,33 @@ trait ROSApplicationProvider extends BaseProvider {
       addExpr <- ffiArithmetic.arithmeticCapabilities.add(one_hundred, two_hundred)
 
 
-      //      exceptionCls <- findClass(names.mangle("Exception1"))
-//      exceptionCls2 <- findClass(names.mangle("Exception2"))
-//
-//      _ <- addExceptionHandler(
-//        for {
-//          _ <- print_message("in the try block")
-//        } yield None,
-//        Some(addExpr),
-//        Seq(
-//          (exceptionCls, names.mangle("e"),
-//            for {
-//              _ <- print_message("in the first catch")
-//            } yield None
-//          ),
-//          (exceptionCls2, names.mangle("e"),
-//            for {
-//              _ <- print_message("in the second catch")
-//            } yield None
-//          )
-//        ),
-//        Some(
-//          for {
-//            _ <- print_message("in the finally block")
-//          } yield None
-//        )
-//      )
-
     } yield None
   }
 
+  //ROS_NODE **************************************************************************************************
+  def make_ros_node(node: Node): Generator[ClassContext, Unit] = {
+
+    import classCapabilities._
+    for {
+
+      stringType <- toTargetLanguageType(TypeRep.String)
+
+      appClass <- findClass(names.mangle("AbstractNodeMain"))
+      _ <- addParent(appClass)
+
+      _ <- addConstructor(make_ros_node_constructor(node))
+
+      _ <- make_ros_node_init(node)
+
+      _ <- make_ros_node_role_fields(node)
+      _ <- make_ros_node_role_methods(node)
+      _ <- make_ros_node_onstart(node)
+      _ <- make_ros_node_name_getter()
+
+
+    } yield (None)
+
+  }
   def make_ros_nodes(): Generator[ProjectContext, Unit] = {
     import ooParadigm.projectCapabilities._
     for {
@@ -559,20 +1137,7 @@ trait ROSApplicationProvider extends BaseProvider {
       }
     } yield ()
   }
-
-  def make_window_test(): Generator[paradigm.MethodBodyContext, Seq[paradigm.syntax.Expression]] = {
-    import paradigm.methodBodyCapabilities._
-    import ffiEquality.equalityCapabilities._
-    for {
-      two <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, 42)
-    } yield Seq(two)
-  }
-
-  def make_test() : Generator[paradigm.TestContext, Unit] = {
-    for {
-      _ <- paradigm.testCapabilities.addTestCase(make_window_test(), testWindowName)
-    } yield ()
-  }
+  //**********************************************************************************************************
 
   def register_imports(): Generator[paradigm.ProjectContext, Unit] = {
     import paradigm.projectCapabilities._
@@ -581,7 +1146,6 @@ trait ROSApplicationProvider extends BaseProvider {
       Seq("org","ros","exception","RosRuntimeException"),
       Seq("rosjava_test_msgs", "AddTwoIntsRequest"),
       Seq("rosjava_test_msgs", "AddTwoIntsResponse")
-
     )
 
     for {
@@ -598,11 +1162,13 @@ trait ROSApplicationProvider extends BaseProvider {
     } yield ()
   }
 
-
   def implement(): Generator[paradigm.ProjectContext, Unit] = {
     for {
       _ <- register_imports()
+
       _ <- make_ros_nodes()
+      _ <- make_ros_node_listeners()
+      _ <- make_ros_node_loops()
     } yield ()
   }
 

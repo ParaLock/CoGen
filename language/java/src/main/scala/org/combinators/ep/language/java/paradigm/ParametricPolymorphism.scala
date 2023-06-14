@@ -16,6 +16,7 @@ trait ParametricPolymorphism[AP <: AnyParadigm] extends PPoly {
 
   type TypeParameterContext = TypeParamCtxt
 
+
   val methodBodyCapabilities: MethodBodyCapabilities =
     new MethodBodyCapabilities {
       implicit val canAddTypeParameterInMethod: Understands[MethodBodyContext, AddTypeParameter[Name, TypeParameterContext]] =

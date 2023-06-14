@@ -144,12 +144,13 @@ trait AnyParadigm {
   /** Allows clean ability to capture dependencies (i.e., imports) within a given Method Body. */
   type MethodBodyContext
 
-  trait FragmentCapabilities {
-
-  }
-
   /** The overall project stores the CompilationUnits which can be added to it. */
   trait ProjectCapabilities {
+
+    implicit val canNoop: Understands[ProjectContext, Noop]
+
+    def noop(): Generator[ProjectContext, Unit] =
+      AnyParadigm.capability(Noop())
 
     implicit val canRegisterImportForNameInProject: Understands[ProjectContext, RegisterImportForName]
     def registerImportForName(tpe: String, importList: Seq[String], importAll: Boolean = false): Generator[ProjectContext, Unit] =

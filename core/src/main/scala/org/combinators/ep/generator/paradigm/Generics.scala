@@ -69,6 +69,15 @@ trait Generics {
       AnyParadigm.capability(Apply[Expression, Type, Expression](method, arguments))
   }
   val constructorCapabilities: ConstructorCapabilities
+
+  trait MethodBodyCapabilities {
+    implicit val canApplyTypeInMethod: Understands[MethodBodyContext, Apply[Type, Type, Type]]
+    def applyType(tpe: Type, arguments: Seq[Type]): Generator[MethodBodyContext, Type] =
+      AnyParadigm.capability(Apply[Type, Type, Type](tpe, arguments))
+  }
+
+  val methodBodyCapabilities: MethodBodyCapabilities
+
 }
 
 object Generics {

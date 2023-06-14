@@ -15,7 +15,7 @@ class RoboticsDomain {
   var testTopicName: String = "test/topic"
 
   nodes += new Node(
-    "A",
+    "Client",
     new roles.Client(
       testServiceName,
       "AddTwoIntsRequest",
@@ -27,7 +27,7 @@ class RoboticsDomain {
   )
 
   nodes += new Node(
-    "B",
+    "Server",
     new roles.Server(
       testServiceName,
       "AddTwoIntsRequest",
@@ -39,7 +39,7 @@ class RoboticsDomain {
   )
 
   nodes += new Node(
-    "C",
+    "Publisher",
     new roles.Publisher(
       testTopicName,
       "String"
@@ -48,7 +48,7 @@ class RoboticsDomain {
   )
 
   nodes += new Node(
-    "D",
+    "Subscriber",
     new Subscriber(
       testTopicName,
       "String",

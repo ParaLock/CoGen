@@ -116,6 +116,12 @@ trait ObjectOriented {
   val compilationUnitCapabilities: CompilationUnitCapabilities
 
   trait ClassCapabilities {
+
+    implicit val canNoop: Understands[ClassContext, Noop]
+    def noop(): Generator[ClassContext, Unit] =
+      AnyParadigm.capability(Noop())
+
+
     implicit val canDebugInClass: Understands[ClassContext, Debug]
     def debug(tag:String = ""): Generator[ClassContext, Unit] =
       AnyParadigm.capability(Debug(tag))
@@ -349,6 +355,7 @@ trait ObjectOriented {
   val methodBodyCapabilities: MethodBodyCapabilities
 
   trait ProjectCapabilities {
+
     def addClassToProject(classGen: Generator[ClassContext, Unit], qualifiedName: Name* ): Generator[ProjectContext, Unit] = {
       import compilationUnitCapabilities._
       import base.projectCapabilities._
