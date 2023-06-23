@@ -4,9 +4,8 @@ import org.combinators.robotics.domain_model.ros.Node;
 
 class Client(
               var serviceName: String,
-              var requestMsgType: String,
-              var responseMsgType: String,
-              var payloadMsgType: String,
+              var requestMsgType: Class[_],
+              var responseMsgType: Class[_],
               var onResponseFragment: String,
             ) extends Role {
 }

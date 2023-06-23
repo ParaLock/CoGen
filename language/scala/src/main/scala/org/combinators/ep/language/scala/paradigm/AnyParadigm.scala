@@ -215,6 +215,8 @@ trait AnyParadigm extends AP {
             (context, MangledName.fromAST(Type.fresh(command.basedOn.toAST.value)))
           }
         }
+
+      override implicit val canNoop: Understands[CompilationUnitContext, Noop] = ???
     }
 
   val methodBodyCapabilities: MethodBodyCapabilities =

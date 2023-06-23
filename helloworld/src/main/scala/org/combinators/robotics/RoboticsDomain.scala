@@ -1,11 +1,12 @@
 package org.combinators.robotics.examples
 
+import org.combinators.robotics.domain_model.ros.messages._
 import org.combinators.robotics.domain_model.ros.Node
 import org.combinators.robotics.domain_model.ros._
 import org.combinators.robotics.domain_model.ros.roles.{Publisher, Subscriber}
-import org.combinators.robotics.domain_model.{AnalogSensor, Behaviour, DigitalSensor, MotorActuator, TimeSliceStrategy}
 
 import scala.collection.mutable.ArrayBuffer
+
 
 class RoboticsDomain {
 
@@ -15,46 +16,42 @@ class RoboticsDomain {
   var testTopicName: String = "test/topic"
 
   nodes += new Node(
-    "Client",
+    "A",
     new roles.Client(
       testServiceName,
-      "AddTwoIntsRequest",
-      "AddTwoIntsResponse",
-      "AddTwoInts",
-      "ClientOnResponse.java"
+      new SumRequest().getClass,
+      new SumResponse().getClass,
+      "/Robotics/ROS_Fragments/ClientOnResponse.java"
     ),
-    "ClientLoopFragment.java"
+    Some("/Robotics/ROS_Fragments/ClientOnLoop.java")
   )
 
   nodes += new Node(
-    "Server",
+    "B",
     new roles.Server(
       testServiceName,
-      "AddTwoIntsRequest",
-      "AddTwoIntsResponse",
-      "AddTwoInts",
-      "ServerOnRequest.java"
+      new SumRequest().getClass,
+      new SumResponse().getClass,
+      "/Robotics/ROS_Fragments/ServerOnRequest.java"
     ),
-    "ServerLoopFragment.java"
   )
 
   nodes += new Node(
-    "Publisher",
+    "C",
     new roles.Publisher(
       testTopicName,
-      "String"
+      new StringMessage().getClass
     ),
-    "PublisherLoopFragment.java"
+    Some("/Robotics/ROS_Fragments/PublisherOnLoop.java")
   )
 
   nodes += new Node(
-    "Subscriber",
+    "D",
     new Subscriber(
       testTopicName,
-      "String",
-      "ClientOnMessage.java"
-    ),
-    "SubscriberLoopFragment.java"
+      new StringMessage().getClass,
+      "/Robotics/ROS_Fragments/SubscriberOnMessage.java"
+    )
   )
 
 }

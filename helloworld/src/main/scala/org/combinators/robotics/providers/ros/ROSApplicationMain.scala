@@ -50,6 +50,9 @@ class ROSApplicationMain {
   )(
    generator.generics
   )(
+    generator.templatingMethodInClass,
+    generator.templatingMethodInUnit
+  )(
     new RoboticsDomain()
   )
 
@@ -61,6 +64,7 @@ class ROSApplicationMain {
     val files =
       () => generator.paradigm.runGenerator {
         for {
+          _ <- generator.longsInMethod.enable()
           _ <- generator.intsInMethod.enable()
           _ <- generator.booleansInMethod.enable()
           _ <- generator.stringsInMethod.enable()

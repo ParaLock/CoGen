@@ -74,6 +74,7 @@ sealed class CodeGenerator(config: Config) { cc =>
       Lit.Int(_)
     )
 
+
   val stringsInMethod = new Strings[MethodBodyCtxt, paradigm.type](paradigm)
   val stringsInConstructor = new Strings[CtorCtxt, paradigm.type](paradigm)
 

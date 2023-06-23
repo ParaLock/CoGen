@@ -2,7 +2,7 @@ package org.combinators.ep.language.java.paradigm    /*DI:LD:AI*/
 
 import java.nio.file.Paths
 import java.util.UUID
-import com.github.javaparser.ast.{ImportDeclaration, Modifier, NodeList}
+import com.github.javaparser.ast.{ImportDeclaration, Modifier, NodeList, PackageDeclaration}
 import com.github.javaparser.ast.`type`.VoidType
 import com.github.javaparser.ast.body.{ClassOrInterfaceDeclaration, MethodDeclaration}
 import com.github.javaparser.ast.expr.{MethodCallExpr, NameExpr, NullLiteralExpr}
@@ -77,11 +77,12 @@ trait AnyParadigm extends AP {
             // .init drops last element ONLY if not empty
             if (command.name.nonEmpty) {
               tgtPackage.setName(
-                 command.name.init.foldLeft(tgtPackage.getName){case (qualName,suffix) => new com.github.javaparser.ast.expr.Name(qualName, suffix.mangled)}
+                command.name.init.foldLeft(tgtPackage.getName){case (qualName,suffix) => new com.github.javaparser.ast.expr.Name(qualName, suffix.mangled)}
               )
             }
 
             unit.setPackageDeclaration(tgtPackage)
+
             val (uc, _) =
               Command.runGenerator(
                 command.unit,
@@ -90,6 +91,11 @@ trait AnyParadigm extends AP {
                   unit,
                   isTest = false)
               )
+
+            if(uc.unit.getPackageDeclaration != tgtPackage) {
+              uc.unit.setPackageDeclaration(tgtPackage)
+            }
+
             val (newUnits, newTestUnits) =
               if (uc.isTest) {
                 (context.units, context.testUnits :+ uc.unit)
@@ -126,6 +132,15 @@ trait AnyParadigm extends AP {
 
   val compilationUnitCapabilities: CompilationUnitCapabilities =
     new CompilationUnitCapabilities {
+
+      override implicit val canNoop: Understands[CompilationUnitCtxt, Noop] =
+        new Understands[CompilationUnitCtxt, Noop] {
+          /** Returns the updated context and the result of the command. */
+          override def perform(context: CompilationUnitCtxt, command: Noop): (CompilationUnitCtxt, Unit) = {
+            (context, ())
+          }
+        }
+
       implicit val canDebugInCompilationUnit: Understands[CompilationUnitCtxt, Debug] =
         new Understands[CompilationUnitCtxt, Debug] {
           def perform(
@@ -504,6 +519,7 @@ trait AnyParadigm extends AP {
         _methodTypeResolution = _ => tpe => throw new NotImplementedError(tpe.toString),
         _constructorTypeResolution = _ => tpe => throw new NotImplementedError(tpe.toString),
         _classTypeResolution = _ => tpe => throw new NotImplementedError(tpe.toString),
+        _reificationInClass = _ => rep => throw new NotImplementedError(rep.toString),
         _reificationInConstructor = _ => rep => throw new NotImplementedError(rep.toString),
         _reificationInMethod = _ => rep => throw new NotImplementedError(rep.toString),
         _importResolution = _ => tpe => throw new NotImplementedError(tpe.toString),

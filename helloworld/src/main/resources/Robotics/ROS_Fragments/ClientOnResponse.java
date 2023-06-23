@@ -1,5 +1,3 @@
-package Robotics.fragments.java;
-
 import basic_ros_application.msgs.SumResponse;
 import org.apache.commons.logging.Log;
 

@@ -1,3 +1,3 @@
 package org.combinators.robotics.domain_model.ros.messages
 
-case class SumRequest(var a: Int, var b: Int) {}
+class SumRequest(var a: Long = -1, var b: Long = -1) {}

@@ -50,6 +50,7 @@ case class AddMethod[MethodBodyContext, Name, Expression, Type](
   type Result = Unit
 }
 
+
 case class SetReturnType[Type](tpe: Type) extends Command {
   type Result = Unit
 }
@@ -172,6 +173,13 @@ trait AnyParadigm {
 
   /** Each CompilationUnit may have external import dependencies and associated test cases. */
   trait CompilationUnitCapabilities {
+
+    implicit val canNoop: Understands[CompilationUnitContext, Noop]
+
+    def noop(): Generator[CompilationUnitContext, Unit] =
+      AnyParadigm.capability(Noop())
+
+
     implicit val canDebugInCompilationUnit: Understands[CompilationUnitContext, Debug]
     def debug(tag:String = ""): Generator[CompilationUnitContext, Unit] =
       AnyParadigm.capability(Debug(tag))

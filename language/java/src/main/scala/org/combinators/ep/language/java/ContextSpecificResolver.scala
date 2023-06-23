@@ -15,6 +15,7 @@ case class ContextSpecificResolver(
   _methodTypeResolution: ContextSpecificResolver => TypeRep => Generator[MethodBodyCtxt, Type],
   _constructorTypeResolution: ContextSpecificResolver => TypeRep => Generator[CtorCtxt, Type],
   _classTypeResolution: ContextSpecificResolver => TypeRep => Generator[ClassCtxt, Type],
+  _reificationInClass: ContextSpecificResolver => InstanceRep => Generator[ClassCtxt, Expression],
   _reificationInConstructor: ContextSpecificResolver => InstanceRep => Generator[CtorCtxt, Expression],
   _reificationInMethod: ContextSpecificResolver => InstanceRep => Generator[MethodBodyCtxt, Expression],
   _importResolution: ContextSpecificResolver => Type => Option[Import],
@@ -28,6 +29,8 @@ case class ContextSpecificResolver(
     _constructorTypeResolution(this)(tpeRep)
   def classTypeResolution(tpeRep: TypeRep): Generator[ClassCtxt, Type] =
     _classTypeResolution(this)(tpeRep)
+  def reificationInClass(instRep: InstanceRep): Generator[ClassCtxt, Expression] =
+    _reificationInClass(this)(instRep)
   def reificationInConstructor(instRep: InstanceRep): Generator[CtorCtxt, Expression] =
     _reificationInConstructor(this)(instRep)
   def reificationInMethod(instRep: InstanceRep): Generator[MethodBodyCtxt, Expression] =
@@ -94,6 +97,7 @@ object ContextSpecificResolver {
             possiblyBoxedTargetType(config.boxLevel.inClasses),
             resolver._classTypeResolution
           ),
+        _reificationInClass = addReification(resolver._reificationInClass),
         _reificationInConstructor = addReification(resolver._reificationInConstructor),
         _reificationInMethod = addReification(resolver._reificationInMethod),
         _importResolution = addExtraImport(resolver._importResolution)

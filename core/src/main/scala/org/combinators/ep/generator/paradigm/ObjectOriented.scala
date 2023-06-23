@@ -6,7 +6,7 @@ import org.combinators.ep.domain.abstractions.{DataType, TypeRep}
 
 case class AddClass[ClassContext, Name](
     name: Name,
-    cls: Generator[ClassContext, Unit]
+    cls: Generator[ClassContext, Unit],
   ) extends Command {
   type Result = Unit
 }
@@ -23,7 +23,14 @@ case class RemoveMethod[Type, Name](interface: Type, name:Name) extends Command 
   type Result = Unit
 }
 
-case class AddField[Name, Type, Expression](name: Name, tpe: Type, isMutable: Boolean = true, isVisibleToSubclasses:Boolean = true, initializer:Option[Expression] = Option.empty) extends Command {
+case class AddField[Name, Type, Expression](
+                                             name: Name,
+                                             tpe: Type,
+                                             isMutable: Boolean = true,
+                                             isVisibleToSubclasses: Boolean = true,
+                                             initializer: Option[Expression] = Option.empty,
+                                             isStatic: Boolean = false
+                                           ) extends Command {
   type Result = Unit
 }
 
@@ -152,8 +159,8 @@ trait ObjectOriented {
       AnyParadigm.capability(RemoveMethod(interface, name))
 
     implicit val canAddFieldInClass: Understands[ClassContext, AddField[Name, Type, Expression]]
-    def addField(name: Name, tpe: Type, init:Option[Expression] = Option.empty): Generator[ClassContext, Unit] =
-      AnyParadigm.capability(AddField[Name, Type, Expression](name, tpe, initializer = init))
+    def addField(name: Name, tpe: Type, init:Option[Expression] = Option.empty, isStatic: Boolean = false): Generator[ClassContext, Unit] =
+      AnyParadigm.capability(AddField[Name, Type, Expression](name, tpe, initializer = init, isStatic = isStatic))
 
     // can get a field (by name) and it becomes an expression by itself
     implicit val canGetFieldInClass: Understands[ClassContext, GetField[Name,Expression]]
@@ -173,6 +180,7 @@ trait ObjectOriented {
         thrownExceptions: Seq[Type] = Seq.empty
                  ): Generator[ClassContext, Unit] =
       AnyParadigm.capability(AddMethod(name, spec, isPublic, thrownExceptions))
+
 
     def addAbstractMethod(name: Name, spec: Generator[MethodBodyContext, Unit], isPublic: Boolean = true): Generator[ClassContext, Unit] = {
       addMethod(name, spec.flatMap(_ => methodBodyCapabilities.setAbstract()).map(_ => None), isPublic)
@@ -213,6 +221,11 @@ trait ObjectOriented {
     implicit val canFindClassInClass: Understands[ClassContext, FindClass[Name, Type]]
     def findClass(qualifiedName: Name*): Generator[ClassContext, Type] =
       AnyParadigm.capability(FindClass[Name, Type](qualifiedName))
+
+    implicit def canReifyInClass[T]: Understands[ClassContext, Reify[T, Expression]]
+    def reify[T](tpe: TypeRep.OfHostType[T], elem: T): Generator[ClassContext, Expression] =
+      AnyParadigm.capability(Reify[T, Expression](tpe, elem))
+
 
     def findRawClass(qualifiedName: Name*): Generator[ClassContext, Type] =
       AnyParadigm.capability(FindClass[Name, Type](qualifiedName, true))

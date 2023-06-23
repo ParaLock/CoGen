@@ -95,11 +95,10 @@ trait TemplatingMethodInCompilationUnit[AP <: AnyParadigm] extends TP[Compilatio
 
         val sourceStream = command.fragmentUrl.openStream()
         val sourceStr = new String(sourceStream.readAllBytes, StandardCharsets.UTF_8)
-
         val compUnit = StaticJavaParser.parse(sourceStr)
 
         val tgtPackage = config.targetPackage.clone
-
+        tgtPackage.setName(tgtPackage.getName())
         compUnit.setPackageDeclaration(tgtPackage)
 
         (context.copy(unit=compUnit),())

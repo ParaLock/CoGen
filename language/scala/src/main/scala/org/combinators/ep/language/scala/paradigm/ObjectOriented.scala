@@ -162,6 +162,8 @@ trait ObjectOriented[AP <: AnyParadigm] extends OO {
       implicit val canFindClassInClass: Understands[ClassCtxt, FindClass[MangledName, Type]] = ???
       implicit val canGetFreshNameInClass: Understands[ClassCtxt, FreshName[MangledName]] = ???
       override implicit val canNoop: Understands[ClassCtxt, Noop] = ???
+
+      override implicit def canReifyInClass[T]: Understands[ClassCtxt, Reify[T, Term]] = ???
     }
   val constructorCapabilities: ConstructorCapabilities = ???
   val methodBodyCapabilities: MethodBodyCapabilities = ???

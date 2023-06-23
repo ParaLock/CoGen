@@ -173,10 +173,30 @@ trait ObjectOriented[AP <: AnyParadigm] extends OO {
             context: ClassContext,
             command: AddField[Name, Type, Expression]
           ): (ClassContext, Unit) = {
+
             val resultCls = context.cls.clone()
-            val modifiers: Seq[Modifier.Keyword] =
-            (if (command.isVisibleToSubclasses) Seq(Modifier.protectedModifier().getKeyword) else Seq(Modifier.privateModifier().getKeyword)) ++ (if (command.isMutable) Seq.empty else Seq(Modifier.finalModifier().getKeyword))
-            resultCls.addField(command.tpe, command.name.toAST.toString, modifiers:_*)
+            var modifiers: Seq[Modifier.Keyword] = Seq.empty
+
+            if(command.isVisibleToSubclasses) {
+              modifiers = modifiers :+ Modifier.protectedModifier().getKeyword
+            } else {
+              modifiers = modifiers :+ Modifier.privateModifier().getKeyword
+            }
+
+            if (!command.isMutable) {
+              modifiers = modifiers :+ Modifier.finalModifier().getKeyword
+            }
+
+            if(command.isStatic) {
+              modifiers = modifiers :+ Modifier.staticModifier().getKeyword
+            }
+
+            if (command.initializer.isDefined) {
+              resultCls.addFieldWithInitializer(command.tpe, command.name.toAST.toString, command.initializer.get, modifiers: _*)
+            } else {
+              resultCls.addField(command.tpe, command.name.toAST.toString, modifiers: _*)
+            }
+
             (context.copy(cls = resultCls), ())
           }
         }
@@ -387,6 +407,13 @@ trait ObjectOriented[AP <: AnyParadigm] extends OO {
           /** Returns the updated context and the result of the command. */
           override def perform(context: ClassCtxt, command: Noop): (ClassCtxt, Unit) = {
             (context, ())
+          }
+        }
+
+      override implicit def canReifyInClass[T]: Understands[ClassCtxt, Reify[T, Expression]] =
+        new Understands[ClassCtxt, Reify[T, Expression]] {
+          override def perform(context: ClassCtxt, command: Reify[T, Expression]): (ClassCtxt, Expression) = {
+            Command.runGenerator(context.resolver.reificationInClass(InstanceRep(command.tpe)(command.value)), context)
           }
         }
     }

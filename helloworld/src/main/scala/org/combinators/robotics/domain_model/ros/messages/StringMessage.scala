@@ -1,3 +1,5 @@
-package org.combinators.robotics.domain_model.ros.messages
+package org.combinators.robotics.domain_model.ros
 
-case class StringMessage(var sum: String) {}
+class StringMessage {
+  var data: String = ""
+}
