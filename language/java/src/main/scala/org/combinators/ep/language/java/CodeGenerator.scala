@@ -86,6 +86,14 @@ sealed class CodeGenerator(config: Config) { cc =>
       x => new LongLiteralExpr(String.valueOf(x))
     )
 
+  val floatsInMethod =
+    new Arithmetic[MethodBodyCtxt, Float, paradigm.type](
+      paradigm,
+      TypeRep.Float,
+      PrimitiveType.floatType(),
+      x => new DoubleLiteralExpr(x + "f")
+    )
+
   val stringsInMethod =
     new Strings[MethodBodyCtxt, paradigm.type](
       paradigm,
@@ -131,7 +139,12 @@ sealed class CodeGenerator(config: Config) { cc =>
     new Arrays[CtorCtxt, paradigm.type](
       paradigm
     )
-    
+
+  val arraysInClass =
+    new Arrays[ClassCtxt, paradigm.type](
+      paradigm
+    )
+
 
   val listsInMethod =
     Lists[MethodBodyCtxt, paradigm.type, generics.type](
@@ -165,27 +178,6 @@ sealed class CodeGenerator(config: Config) { cc =>
 
   val assertionsInMethod = new Assertions[paradigm.type](paradigm)(ooParadigm)
   val exceptionsInMethod = new Exceptions[paradigm.type](paradigm)
-
-  def getFeatures(): Features = {
-
-    Features[
-      Syntax.default.type,
-      paradigm.type
-    ](
-      paradigm
-    )(
-      JavaNameProvider,
-      imperativeInMethod,
-      ooParadigm,
-      consoleInMethod,
-      arraysInMethod,
-      assertionsInMethod,
-      equalityInMethod,
-      intsInMethod,
-      assertionsInMethod,
-      equalityInMethod
-    )
-  }
 
 }
 

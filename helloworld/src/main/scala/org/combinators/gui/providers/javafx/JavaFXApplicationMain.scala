@@ -47,7 +47,8 @@ class JavaFXApplicationMain {
     generator.equalityInMethod
   )(
     generator.templatingMethodInClass,
-    generator.templatingMethodInUnit
+    generator.templatingMethodInUnit,
+    generator.arraysInClass
   )(
     new GUIDomain()
   )(generator.imperativeInConstructor)

@@ -154,8 +154,9 @@ trait AnyParadigm {
       AnyParadigm.capability(Noop())
 
     implicit val canRegisterImportForNameInProject: Understands[ProjectContext, RegisterImportForName]
-    def registerImportForName(tpe: String, importList: Seq[String], importAll: Boolean = false): Generator[ProjectContext, Unit] =
+    def registerImportForName(tpe: String, importList: Seq[String], importAll: Boolean = false): Generator[ProjectContext, Unit] = {
       AnyParadigm.capability(RegisterImportForName(tpe, importList, importAll))
+    }
 
     implicit val canDebugInProject: Understands[ProjectContext, Debug]
     def debug(tag:String = ""): Generator[ProjectContext, Unit] =

@@ -205,6 +205,12 @@ object TypeRep {
   case object Double extends TypeRep {
     type HostType = scala.Double
   }
+
+  /** Represents the Scala type `Float`. */
+  case object Float extends TypeRep {
+    type HostType = scala.Float
+  }
+
   /** Represents the Scala type `Boolean`. */
   case object Boolean extends TypeRep {
     type HostType = scala.Boolean

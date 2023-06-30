@@ -607,10 +607,10 @@ object AnyParadigm {
     var importAll = false
 
     if (ContextSpecificResolver.importsByTypeName.contains(identifier)) {
+
       val importInfo = ContextSpecificResolver.importsByTypeName.get(identifier).get
-      val clsName = importInfo.importList.last
-      val qualifier = new JName(importInfo.importList.dropRight(1).mkString("."))
-      importName = new JName(qualifier, clsName)
+      val qualifier = new JName(importInfo.importList.mkString("."))
+      importName = new JName(qualifier, identifier)
       importAll = importInfo.importAll
     }
 

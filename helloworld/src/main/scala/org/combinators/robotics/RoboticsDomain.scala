@@ -16,7 +16,7 @@ class RoboticsDomain {
   var testTopicName: String = "test/topic"
 
   nodes += new Node(
-    "A",
+    "Client",
     new roles.Client(
       testServiceName,
       new SumRequest().getClass,
@@ -27,7 +27,7 @@ class RoboticsDomain {
   )
 
   nodes += new Node(
-    "B",
+    "Server",
     new roles.Server(
       testServiceName,
       new SumRequest().getClass,
@@ -37,7 +37,7 @@ class RoboticsDomain {
   )
 
   nodes += new Node(
-    "C",
+    "Publisher",
     new roles.Publisher(
       testTopicName,
       new StringMessage().getClass
@@ -46,7 +46,7 @@ class RoboticsDomain {
   )
 
   nodes += new Node(
-    "D",
+    "Subscriber",
     new Subscriber(
       testTopicName,
       new StringMessage().getClass,

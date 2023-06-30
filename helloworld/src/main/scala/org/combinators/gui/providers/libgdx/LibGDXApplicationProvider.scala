@@ -88,12 +88,12 @@ trait LibGDXApplicationProvider extends BaseProvider {
       unitType <- toTargetLanguageType(TypeRep.Unit)
       booleanType <- toTargetLanguageType(TypeRep.Boolean)
       intType <- toTargetLanguageType(TypeRep.Int)
-      doubleType <- toTargetLanguageType(TypeRep.Double)
+      floatType <- toTargetLanguageType(TypeRep.Float)
 
       falseVal <- paradigm.methodBodyCapabilities.reify(TypeRep.Boolean, false)
       zero <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, 0)
       one <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, 1)
-
+      onePointZero <- paradigm.methodBodyCapabilities.reify(TypeRep.Float, 1.0f)
       _ <- setReturnType(unitType)
 
       self <- selfReference()
@@ -133,7 +133,7 @@ trait LibGDXApplicationProvider extends BaseProvider {
         true
       )
 
-      screenUtilsCls <- findClass(names.mangle("ScreenUtils"))
+      screenUtilsCls <- find_and_resolve_class_in_method(names.mangle("ScreenUtils"))
 
       _ <- make_static_method_call(
         screenUtilsCls,
@@ -203,8 +203,8 @@ trait LibGDXApplicationProvider extends BaseProvider {
 
       numRowsVar <- declareVar(names.mangle("numRows"), intType, Some(numRows))
       numColsVar <- declareVar(names.mangle("numCols"), intType, Some(numCols))
-      numRowsPlusOne <- ffiArithmetic.arithmeticCapabilities.add(numRowsVar, one)
-      numColsPlusOne <- ffiArithmetic.arithmeticCapabilities.add(numColsVar, one)
+      numRowsPlusOne <- ffiArithmetic.arithmeticCapabilities.add(numRowsVar, onePointZero)
+      numColsPlusOne <- ffiArithmetic.arithmeticCapabilities.add(numColsVar, onePointZero)
 
       yPaddingExpr <- ffiArithmetic.arithmeticCapabilities.div(
         getHeightCall,
@@ -215,15 +215,15 @@ trait LibGDXApplicationProvider extends BaseProvider {
         numColsPlusOne
       )
 
-      yPaddingVar <- declareVar(names.mangle("yPadding"), doubleType, Some(yPaddingExpr))
-      xPaddingVar <- declareVar(names.mangle("xPadding"), doubleType, Some(xPaddingExpr))
+      yPaddingVar <- declareVar(names.mangle("yPadding"), floatType, Some(yPaddingExpr))
+      xPaddingVar <- declareVar(names.mangle("xPadding"), floatType, Some(xPaddingExpr))
 
       startYExpr <- ffiArithmetic.arithmeticCapabilities.sub(getHeightCall, yPaddingVar)
-      startYVar <- declareVar(names.mangle("startY"), doubleType, Some(startYExpr))
-      startXVar <- declareVar(names.mangle("startX"), doubleType, Some(xPaddingVar))
+      startYVar <- declareVar(names.mangle("startY"), floatType, Some(startYExpr))
+      startXVar <- declareVar(names.mangle("startX"), floatType, Some(xPaddingVar))
 
-      currYVar <- declareVar(names.mangle("currY"), doubleType, Some(startYVar))
-      currXVar <- declareVar(names.mangle("currX"), doubleType, Some(startXVar))
+      currYVar <- declareVar(names.mangle("currY"), floatType, Some(startYVar))
+      currXVar <- declareVar(names.mangle("currX"), floatType, Some(startXVar))
 
       _ <- forEachWithIndex(layout.elements) { (elem: Element, index: Int) => {
 
@@ -244,7 +244,7 @@ trait LibGDXApplicationProvider extends BaseProvider {
           drawCall <- make_method_call(
             fontObj,
             "draw",
-            Seq(msg, currXVar, currYVar),
+            Seq(batchObj, msg, currXVar, currYVar),
             true
           )
           _ <- if ((index + 1) % layout.cols == 0) {
@@ -363,6 +363,9 @@ trait LibGDXApplicationProvider extends BaseProvider {
       Seq("com", "badlogic", "gdx", "graphics", "g2d", "BitmapFont"),
       Seq("com", "badlogic", "gdx", "graphics", "g2d", "SpriteBatch"),
       Seq("com", "badlogic", "gdx", "utils", "ScreenUtils"),
+      Seq("com", "badlogic", "gdx", "Graphics"),
+      Seq("com", "badlogic", "gdx", "backends", "lwjgl3", "Lwjgl3Application"),
+      Seq("com", "badlogic", "gdx", "backends", "lwjgl3", "Lwjgl3ApplicationConfiguration"),
     )
 
     for {
@@ -371,7 +374,7 @@ trait LibGDXApplicationProvider extends BaseProvider {
         for {
           _ <- registerImportForName(
             elem.last,
-            elem
+            elem.dropRight(1)
           )
         } yield ()
       }

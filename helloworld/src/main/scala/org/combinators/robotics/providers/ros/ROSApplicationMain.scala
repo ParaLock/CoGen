@@ -22,7 +22,7 @@ class ROSApplicationMain {
     CodeGenerator.defaultConfig.copy(
       boxLevel = PartiallyBoxed,
       targetPackage = new PackageDeclaration(
-        ObjectOriented.fromComponents("ros_application")
+        ObjectOriented.fromComponents("basic_ros_application")
       )
     )
   )
@@ -107,7 +107,7 @@ class ROSApplicationMain {
 }
 
 object BasicApplicationDirectToDiskMain extends IOApp {
-  val targetDirectory = Paths.get("target", "ros_application", "java")
+  val targetDirectory = Paths.get("target", "basic_ros_application", "java")
 
   def run(args: List[String]): IO[ExitCode] = {
     for {

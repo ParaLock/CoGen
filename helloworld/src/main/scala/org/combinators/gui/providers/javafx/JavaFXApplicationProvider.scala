@@ -25,7 +25,7 @@ trait JavaFXApplicationProvider extends BaseProvider {
   val impConstructorParadigm: Imperative.WithBase[ooParadigm.ConstructorContext, paradigm.type]
   val classTemplating: Templating.WithBase[ooParadigm.ClassContext, paradigm.MethodBodyContext, paradigm.type]
   val unitTemplating: Templating.WithBase[paradigm.CompilationUnitContext, paradigm.MethodBodyContext, paradigm.type]
-
+  val arrayInClass: Arrays.WithBase[ooParadigm.ClassContext, paradigm.type]
 
   import paradigm._
   import syntax._
@@ -42,8 +42,7 @@ trait JavaFXApplicationProvider extends BaseProvider {
     import paradigm.methodBodyCapabilities._
     import ooParadigm.methodBodyCapabilities._
     for {
-      rt <- findClass(names.mangle(names.conceptNameOf(tpeCase)))
-      _ <- resolveAndAddImport(rt)
+      rt <- find_and_resolve_class_in_method(names.mangle(names.conceptNameOf(tpeCase)))
       res <- instantiateObject(rt, args)
     } yield res
   }
@@ -186,10 +185,20 @@ trait JavaFXApplicationProvider extends BaseProvider {
               index
             )
 
+            msgGetter <- getMember(
+              msgVal,
+              names.mangle("getMsg")
+            )
+
+            msgGetterApply <- apply(
+              msgGetter,
+              Seq.empty
+            )
+
             labelClass <- make_class_instantiation(
               "Label",
               "label",
-              Seq(msgVal)
+              Seq(msgGetterApply)
             )
 
             doubleClass <- findRawClass(names.mangle("Double"))
@@ -311,8 +320,8 @@ trait JavaFXApplicationProvider extends BaseProvider {
       for {
 
         // Make signatures
-        intType <- toTargetLanguageType(TypeRep.Int)
-        _ <- paradigm.methodBodyCapabilities.setReturnType(intType)
+        unit <- toTargetLanguageType(TypeRep.Unit)
+        _ <- paradigm.methodBodyCapabilities.setReturnType(unit)
 
         // call super.stop()
         sp <- superReference()
@@ -501,9 +510,20 @@ trait JavaFXApplicationProvider extends BaseProvider {
 
       for {
 
-        appClass <- findClass(names.mangle("Application"))
-        exceptionClass <- findClass(names.mangle("Exception"))
+        appClass <- find_and_resolve_class_in_class(names.mangle("Application"))
+        exceptionClass <- find_and_resolve_class_in_class(names.mangle("Exception"))
 
+        textElementArr <- find_and_resolve_class_in_class(names.mangle("TextElement"))
+        textElementArrEmpty <- arrayInClass.arrayCapabilities.create(
+          textElementArr,
+          Seq.empty,
+          None
+        )
+
+        _ <- addField(
+          names.mangle("elements"),
+          textElementArr
+        )
         _ <- addParent(appClass)
         _ <- addMethod(initFuncName, make_init(),true, Seq(exceptionClass))
         _ <- addMethod(startFuncName, make_start_func())
@@ -559,7 +579,7 @@ trait JavaFXApplicationProvider extends BaseProvider {
         for {
           _ <- registerImportForName(
             elem.last,
-            elem
+            elem.dropRight(1)
           )
         } yield ()
       }
@@ -602,6 +622,7 @@ object JavaFXApplicationProvider {
   (
     _classTemplating: Templating.WithBase[oo.ClassContext, base.MethodBodyContext, base.type],
     _unitTemplating: Templating.WithBase[base.CompilationUnitContext, base.MethodBodyContext, base.type],
+    _arrInClass: Arrays.WithBase[oo.ClassContext, base.type],
   )(
     _domain: GUIDomain
   )(impConstructor: Imperative.WithBase[oo.ConstructorContext, base.type])
@@ -614,6 +635,7 @@ object JavaFXApplicationProvider {
       override val ooParadigm: oo.type = oo
       override val console: Console.WithBase[base.MethodBodyContext, paradigm.type] = con
       override val array: Arrays.WithBase[base.MethodBodyContext, paradigm.type] = arr
+      override val arrayInClass: Arrays.WithBase[ooParadigm.ClassContext, paradigm.type] = _arrInClass
       override val asserts: Assertions.WithBase[base.MethodBodyContext, paradigm.type] = assertsIn
       override val eqls: Equality.WithBase[base.MethodBodyContext, paradigm.type] = eqlsIn
       override val ffiArithmetic: Arithmetic.WithBase[paradigm.MethodBodyContext, paradigm.type, Int] = ffiarith

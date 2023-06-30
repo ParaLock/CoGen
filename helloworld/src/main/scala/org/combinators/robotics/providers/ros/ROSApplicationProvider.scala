@@ -65,9 +65,7 @@ trait ROSApplicationProvider extends BaseProvider {
     import paradigm.methodBodyCapabilities._
     import ooParadigm.methodBodyCapabilities._
     for {
-      rt <- findClass(names.mangle(names.conceptNameOf(tpeCase)))
-      _ <- resolveAndAddImport(rt)
-
+      rt <- find_and_resolve_class_in_method(names.mangle(names.conceptNameOf(tpeCase)))
       res <- instantiateObject(rt, args)
     } yield res
   }
@@ -99,7 +97,7 @@ trait ROSApplicationProvider extends BaseProvider {
         self <- selfReference()
         nodeNameVar <- getMember(self, names.mangle("nodeName"))
 
-        graphNameCls <- findClass(names.mangle("GraphName"))
+        graphNameCls <- find_and_resolve_class_in_method(names.mangle("GraphName"))
         _ <- setReturnType(graphNameCls)
         getNameFunc <- make_static_method_call(
           graphNameCls,
@@ -135,7 +133,7 @@ trait ROSApplicationProvider extends BaseProvider {
 
     for {
 
-      logCls <- findClass(names.mangle("Log"))
+      logCls <- find_and_resolve_class_in_method(names.mangle("Log"))
 
       args <- getArguments()
       (_, _, connectedNodeParam) = args.head
@@ -149,7 +147,7 @@ trait ROSApplicationProvider extends BaseProvider {
 
       logVar <- declareVar(names.mangle("log"), logCls, Some(getLogFunc))
 
-      exceptionCls <- findClass(names.mangle("ServiceNotFoundException"))
+      exceptionCls <- find_and_resolve_class_in_method(names.mangle("ServiceNotFoundException"))
 
       _ <- addExceptionHandler(
         for {
@@ -157,12 +155,12 @@ trait ROSApplicationProvider extends BaseProvider {
           self <- selfReference()
           varName <- getMember(self, names.mangle(fields._1))
 
-          serviceClientcls <- findClass(names.mangle("ServiceClient"))
-          requestCls <- findClass(names.mangle(getClassName(role.requestMsgType)))
-          responseCls <- findClass(names.mangle(getClassName(role.responseMsgType)))
+          serviceClientcls <- find_and_resolve_class_in_method(names.mangle("ServiceClient"))
+          requestCls <- find_and_resolve_class_in_method(names.mangle(getClassName(role.requestMsgType)))
+          responseCls <- find_and_resolve_class_in_method(names.mangle(getClassName(role.responseMsgType)))
 
 
-          msgType <- findClass(
+          msgType <- find_and_resolve_class_in_method(
             names.mangle(get_payload_msg_name(role.responseMsgType, role.requestMsgType))
           )
 
@@ -195,7 +193,7 @@ trait ROSApplicationProvider extends BaseProvider {
             true
           )
 
-          listenerCls <- findClass(names.mangle("ROSNode" + node.name + "Listener"))
+          listenerCls <- find_and_resolve_class_in_method(names.mangle("ROSNode" + node.name + "Listener"))
 
           listenerVar <- make_class_instantiation(
             listenerCls,
@@ -221,10 +219,6 @@ trait ROSApplicationProvider extends BaseProvider {
             true
           )
 
-//          connectedNode.executeCancellableLoop(
-//          new ROSJavaClientNodeLoop(serviceClient, log, responseListener)
-//          );
-
         } yield None,
         None,
         Seq(
@@ -232,7 +226,7 @@ trait ROSApplicationProvider extends BaseProvider {
             for {
 
               excepName <- nameToExpression(excepName)
-              exceptionUtlsCls <- findClass(names.mangle("ExceptionUtils"))
+              exceptionUtlsCls <- find_and_resolve_class_in_method(names.mangle("ExceptionUtils"))
 
               getStackTraceFunc <- make_static_method_call(
                 exceptionUtlsCls,
@@ -248,7 +242,7 @@ trait ROSApplicationProvider extends BaseProvider {
                 true
               )
 
-              rosRuntimeExceptionCls <- findClass(names.mangle("RosRuntimeException"))
+              rosRuntimeExceptionCls <- find_and_resolve_class_in_method(names.mangle("RosRuntimeException"))
               _ <- resolveAndAddImport(rosRuntimeExceptionCls)
 
               excep <- exceptions.exceptionCapabilities.raise(
@@ -304,11 +298,11 @@ trait ROSApplicationProvider extends BaseProvider {
       self <- selfReference()
       varName <- getMember(self, names.mangle(fields._1))
 
-      serviceServercls <- findClass(names.mangle("ServiceServer"))
-      requestCls <- findClass(names.mangle(getClassName(role.requestMsgType)))
-      responseCls <- findClass(names.mangle(getClassName(role.responseMsgType)))
+      serviceServercls <- find_and_resolve_class_in_method(names.mangle("ServiceServer"))
+      requestCls <- find_and_resolve_class_in_method(names.mangle(getClassName(role.requestMsgType)))
+      responseCls <- find_and_resolve_class_in_method(names.mangle(getClassName(role.responseMsgType)))
 
-      msgType <- findClass(
+      msgType <- find_and_resolve_class_in_method(
         names.mangle(get_payload_msg_name(role.responseMsgType, role.requestMsgType))
       )
 
@@ -410,7 +404,7 @@ trait ROSApplicationProvider extends BaseProvider {
 
       self <- selfReference()
 
-      logCls <- findClass(names.mangle("Log"))
+      logCls <- find_and_resolve_class_in_method(names.mangle("Log"))
 
       args <- getArguments()
       (_, _, connectedNodeParam) = args.head
@@ -424,11 +418,11 @@ trait ROSApplicationProvider extends BaseProvider {
 
       logVar <- declareVar(names.mangle("log"), logCls, Some(getLogFunc))
 
-      publisherCls <- findClass(
+      publisherCls <- find_and_resolve_class_in_method(
         names.mangle("Publisher")
       )
 
-      msgType <- findClass(
+      msgType <- find_and_resolve_class_in_method(
         names.mangle(getClassName(role.msgType))
       )
 
@@ -488,7 +482,7 @@ trait ROSApplicationProvider extends BaseProvider {
 
       self <- selfReference()
 
-      logCls <- findClass(names.mangle("Log"))
+      logCls <- find_and_resolve_class_in_method(names.mangle("Log"))
 
       args <- getArguments()
       (_, _, connectedNodeParam) = args.head
@@ -502,11 +496,11 @@ trait ROSApplicationProvider extends BaseProvider {
 
       logVar <- declareVar(names.mangle("log"), logCls, Some(getLogFunc))
 
-      subscriberCls <- findClass(
+      subscriberCls <- find_and_resolve_class_in_method(
         names.mangle("Subscriber")
       )
 
-      msgType <- findClass(
+      msgType <- find_and_resolve_class_in_method(
         names.mangle(getClassName(role.msgType))
       )
 
@@ -590,7 +584,7 @@ trait ROSApplicationProvider extends BaseProvider {
         unitType <- toTargetLanguageType(TypeRep.Unit)
         _ <- setReturnType(unitType)
 
-        connectedNodeCls <- findClass(names.mangle("ConnectedNode"))
+        connectedNodeCls <- find_and_resolve_class_in_method(names.mangle("ConnectedNode"))
 
         _ <- setParameters(
           Seq((names.mangle("connectedNode"), connectedNodeCls))
@@ -663,8 +657,8 @@ trait ROSApplicationProvider extends BaseProvider {
 
         varName <- getMember(self, names.mangle(fields._1))
 
-        preconditionsCls <- findClass(names.mangle("Preconditions"))
-        stringUtlsCls <- findClass(names.mangle("StringUtils"))
+        preconditionsCls <- find_and_resolve_class_in_method(names.mangle("Preconditions"))
+        stringUtlsCls <- find_and_resolve_class_in_method(names.mangle("StringUtils"))
 
         isNotBlankFunc <- make_static_method_call(
           stringUtlsCls,
@@ -708,8 +702,8 @@ trait ROSApplicationProvider extends BaseProvider {
 
         nodeNameVar <- getMember(self, names.mangle("nodeName"))
 
-        preconditionsCls <- findClass(names.mangle("Preconditions"))
-        stringUtlsCls <- findClass(names.mangle("StringUtils"))
+        preconditionsCls <- find_and_resolve_class_in_method(names.mangle("Preconditions"))
+        stringUtlsCls <- find_and_resolve_class_in_method(names.mangle("StringUtils"))
 
         isNotBlankFunc <- make_static_method_call(
           stringUtlsCls,
@@ -783,7 +777,7 @@ trait ROSApplicationProvider extends BaseProvider {
     import classCapabilities._
 
     for {
-      logType <- findClass(names.mangle("Log"))
+      logType <- find_and_resolve_class_in_class(names.mangle("Log"))
       _ <- addField(names.mangle("log"), logType)
     } yield (None)
 
@@ -839,8 +833,8 @@ trait ROSApplicationProvider extends BaseProvider {
 
         self <- selfReference()
 
-        requestCls <- findClass(names.mangle(getClassName(role.requestMsgType)))
-        responseCls <- findClass(names.mangle(getClassName(role.responseMsgType)))
+        requestCls <- find_and_resolve_class_in_method(names.mangle(getClassName(role.requestMsgType)))
+        responseCls <- find_and_resolve_class_in_method(names.mangle(getClassName(role.responseMsgType)))
 
         _ <- setParameters(Seq(
           (names.mangle("request"), requestCls),
@@ -855,7 +849,7 @@ trait ROSApplicationProvider extends BaseProvider {
 
         logVar <- getMember(self, names.mangle("log"))
 
-        cls <- findClass(names.mangle(fragmentClassName))
+        cls <- find_and_resolve_class_in_method(names.mangle(fragmentClassName))
         _ <- make_static_method_call(
           cls,
           "run",
@@ -966,12 +960,12 @@ trait ROSApplicationProvider extends BaseProvider {
 
         logVar <- getMember(self, names.mangle("log"))
 
-        fragCls <- findClass(names.mangle(fragmentClassName))
+        fragCls <- find_and_resolve_class_in_method(names.mangle(fragmentClassName))
 
         unitType <- toTargetLanguageType(TypeRep.Unit)
         _ <- setReturnType(unitType)
 
-        msgType <- findClass(names.mangle(getClassName(role.msgType)))
+        msgType <- find_and_resolve_class_in_method(names.mangle(getClassName(role.msgType)))
 
         _ <- setParameters(Seq(
           (names.mangle("message"), msgType)
@@ -995,9 +989,9 @@ trait ROSApplicationProvider extends BaseProvider {
 
     for {
 
-      msgListenerCls <- findClass(names.mangle("MessageListener"))
-      msgCls <- findClass(names.mangle(getClassName(role.msgType)))
-      logCls <- findClass(names.mangle("Log"))
+      msgListenerCls <- find_and_resolve_class_in_class(names.mangle("MessageListener"))
+      msgCls <- find_and_resolve_class_in_class(names.mangle(getClassName(role.msgType)))
+      logCls <- find_and_resolve_class_in_class(names.mangle("Log"))
 
       messageListenerWithParams <- applyType(
         msgListenerCls,
@@ -1059,7 +1053,7 @@ trait ROSApplicationProvider extends BaseProvider {
 
         self <- selfReference()
 
-        remoteException <- findClass(names.mangle("RemoteException"))
+        remoteException <- find_and_resolve_class_in_method(names.mangle("RemoteException"))
 
         _ <- setParameters(Seq(
           (names.mangle("remoteException"), remoteException)
@@ -1070,7 +1064,7 @@ trait ROSApplicationProvider extends BaseProvider {
 
         connectedNodeMemberVar <- getMember(self, names.mangle("connectedNode"))
 
-        exceptionUtilsCls <- findClass(names.mangle("ExceptionUtils"))
+        exceptionUtilsCls <- find_and_resolve_class_in_method(names.mangle("ExceptionUtils"))
 
         stackTraceInvoke <- make_static_method_call(
           exceptionUtilsCls,
@@ -1101,8 +1095,8 @@ trait ROSApplicationProvider extends BaseProvider {
         unitType <- toTargetLanguageType(TypeRep.Unit)
         _ <- setReturnType(unitType)
 
-        responseCls <- findClass(names.mangle(getClassName(role.responseMsgType)))
-        fragmentCls <- findClass(names.mangle(fragmentClassName))
+        responseCls <- find_and_resolve_class_in_method(names.mangle(getClassName(role.responseMsgType)))
+        fragmentCls <- find_and_resolve_class_in_method(names.mangle(fragmentClassName))
 
         _ <- setParameters(Seq(
           (names.mangle("response"), responseCls)
@@ -1134,9 +1128,9 @@ trait ROSApplicationProvider extends BaseProvider {
 
     for {
 
-      responseListenerCls <- findClass(names.mangle("ServiceResponseListener"))
-      responseCls <- findClass(names.mangle(getClassName(role.responseMsgType)))
-      connectedNodeCls <- findClass(names.mangle("ConnectedNode"))
+      responseListenerCls <- find_and_resolve_class_in_class(names.mangle("ServiceResponseListener"))
+      responseCls <- find_and_resolve_class_in_class(names.mangle(getClassName(role.responseMsgType)))
+      connectedNodeCls <- find_and_resolve_class_in_class(names.mangle("ConnectedNode"))
 
       serviceClientClsWithParams <- applyType(
         responseListenerCls,
@@ -1225,7 +1219,7 @@ trait ROSApplicationProvider extends BaseProvider {
 
         newMsgInvoke <- make_method_call(newMsgFunc, Seq.empty, false)
 
-        requestCls <- findClass(names.mangle(getClassName(role.requestMsgType)))
+        requestCls <- find_and_resolve_class_in_method(names.mangle(getClassName(role.requestMsgType)))
 
         requestVar <- declareVar(
           names.mangle("request"),
@@ -1237,7 +1231,7 @@ trait ROSApplicationProvider extends BaseProvider {
 
         _ <- if(node.loopFragment.isDefined) {
           for {
-            loopCls <- findClass(names.mangle(fragmentClassName))
+            loopCls <- find_and_resolve_class_in_method(names.mangle(fragmentClassName))
             _ <- make_static_method_call(
               loopCls,
               "run",
@@ -1297,13 +1291,13 @@ trait ROSApplicationProvider extends BaseProvider {
 
     for {
 
-      cancelableLoopCls <- findClass(names.mangle("CancellableLoop"))
+      cancelableLoopCls <- find_and_resolve_class_in_class(names.mangle("CancellableLoop"))
 
       _ <- addParent(cancelableLoopCls)
 
-      serviceClientCls <- findClass(names.mangle("ServiceClient"))
-      requestCls <- findClass(names.mangle(getClassName(role.requestMsgType)))
-      responseCls <- findClass(names.mangle(getClassName(role.responseMsgType)))
+      serviceClientCls <- find_and_resolve_class_in_class(names.mangle("ServiceClient"))
+      requestCls <- find_and_resolve_class_in_class(names.mangle(getClassName(role.requestMsgType)))
+      responseCls <- find_and_resolve_class_in_class(names.mangle(getClassName(role.responseMsgType)))
       serviceClientClsWithParams <- applyType (
         serviceClientCls,
         Seq(requestCls, responseCls)
@@ -1311,10 +1305,10 @@ trait ROSApplicationProvider extends BaseProvider {
 
       _ <- addField(names.mangle("serviceClient"), serviceClientClsWithParams)
 
-      logCls <- findClass(names.mangle("Log"))
+      logCls <- find_and_resolve_class_in_class(names.mangle("Log"))
       _ <- addField(names.mangle("log"), logCls)
 
-      serviceResponseListenerCls <- findClass(names.mangle("ServiceResponseListener"))
+      serviceResponseListenerCls <- find_and_resolve_class_in_class(names.mangle("ServiceResponseListener"))
       serviceResponseListenerClsWithParams <- applyType(
         serviceResponseListenerCls,
         Seq(responseCls)
@@ -1329,7 +1323,7 @@ trait ROSApplicationProvider extends BaseProvider {
         )
       )
 
-      interruptableExcep <- findClass(names.mangle("InterruptedException"))
+      interruptableExcep <- find_and_resolve_class_in_class(names.mangle("InterruptedException"))
 
       _ <- addMethod(
         names.mangle("loop"),
@@ -1375,7 +1369,7 @@ trait ROSApplicationProvider extends BaseProvider {
 
         logVar <- getMember(self, names.mangle("log"))
 
-        messageCls <- findClass(names.mangle(getClassName(role.msgType)))
+        messageCls <- find_and_resolve_class_in_method(names.mangle(getClassName(role.msgType)))
 
         messageVar <- declareVar(
           names.mangle("message"),
@@ -1385,7 +1379,7 @@ trait ROSApplicationProvider extends BaseProvider {
 
         _ <- if(node.loopFragment.isDefined) {
           for {
-            loopCls <- findClass(names.mangle(fragmentClassName))
+            loopCls <- find_and_resolve_class_in_method(names.mangle(fragmentClassName))
             _ <- make_static_method_call(
               loopCls,
               "run",
@@ -1442,12 +1436,12 @@ trait ROSApplicationProvider extends BaseProvider {
 
     for {
 
-      cancelableLoopCls <- findClass(names.mangle("CancellableLoop"))
+      cancelableLoopCls <- find_and_resolve_class_in_class(names.mangle("CancellableLoop"))
 
       _ <- addParent(cancelableLoopCls)
 
-      serviceClientCls <- findClass(names.mangle("Publisher"))
-      messageCls <- findClass(names.mangle(getClassName(role.msgType)))
+      serviceClientCls <- find_and_resolve_class_in_class(names.mangle("Publisher"))
+      messageCls <- find_and_resolve_class_in_class(names.mangle(getClassName(role.msgType)))
       publisherClsWithParams <- applyType(
         serviceClientCls,
         Seq(messageCls)
@@ -1455,7 +1449,7 @@ trait ROSApplicationProvider extends BaseProvider {
 
       _ <- addField(names.mangle("publisher"), publisherClsWithParams)
 
-      logCls <- findClass(names.mangle("Log"))
+      logCls <- find_and_resolve_class_in_class(names.mangle("Log"))
       _ <- addField(names.mangle("log"), logCls)
 
       _ <- addConstructor(
@@ -1465,7 +1459,7 @@ trait ROSApplicationProvider extends BaseProvider {
         )
       )
 
-      interruptableExcep <- findClass(names.mangle("InterruptedException"))
+      interruptableExcep <- find_and_resolve_class_in_class(names.mangle("InterruptedException"))
 
       _ <- addMethod(
         names.mangle("loop"),
@@ -1525,11 +1519,11 @@ trait ROSApplicationProvider extends BaseProvider {
       for {
 
 
-        nodeConfigurationCls <- findClass(names.mangle("NodeConfiguration"))
-        stringCls <- findClass(names.mangle("String"))
+        nodeConfigurationCls <- find_and_resolve_class_in_method(names.mangle("NodeConfiguration"))
+        stringCls <- toTargetLanguageType(TypeRep.String)
         _ <- resolveAndAddImport(stringCls)
 
-        uriCls <- findClass(names.mangle("URI"))
+        uriCls <- find_and_resolve_class_in_method(names.mangle("URI"))
 
         _ <- setStatic()
         _ <- setReturnType(nodeConfigurationCls)
@@ -1594,7 +1588,7 @@ trait ROSApplicationProvider extends BaseProvider {
       for {
 
         unit <- toTargetLanguageType(TypeRep.Unit)
-        stringCls <- findClass(names.mangle("String"))
+        stringCls <- toTargetLanguageType(TypeRep.String)
         _ <- resolveAndAddImport(stringCls)
         stringArrayExpr <- array.arrayCapabilities.create(stringCls, Seq.empty, None)
         arrayType <- toTargetLanguageType(TypeRep.Array(TypeRep.String))
@@ -1633,7 +1627,7 @@ trait ROSApplicationProvider extends BaseProvider {
           Some(rosHostPort)
         )
 
-        rosCoreCls <- findClass(names.mangle("RosCore"))
+        rosCoreCls <- find_and_resolve_class_in_method(names.mangle("RosCore"))
         newPublicFunc <- make_static_method_call(
           rosCoreCls,
           "newPublic",
@@ -1655,8 +1649,8 @@ trait ROSApplicationProvider extends BaseProvider {
         )
 
         self <- selfReference()
-        systemCls <- findClass(names.mangle("System"))
-        exceptionCls <- findClass(names.mangle("Exception"))
+        systemCls <- find_and_resolve_class_in_method(names.mangle("System"))
+        exceptionCls <- find_and_resolve_class_in_method(names.mangle("Exception"))
 
         _ <- addExceptionHandler(
           for {
@@ -1682,7 +1676,7 @@ trait ROSApplicationProvider extends BaseProvider {
               uriStr2, rosHostPortStr
             )
 
-            uriCls <- findClass(names.mangle("URI"))
+            uriCls <- find_and_resolve_class_in_method(names.mangle("URI"))
             uriInst <- make_class_instantiation_floating(
               "URI",
               Seq(uriStr3)
@@ -1690,7 +1684,7 @@ trait ROSApplicationProvider extends BaseProvider {
             rosMasterUriVar <- declareVar(names.mangle("rosMasterUri"), uriCls, Some(uriInst))
 
 
-            timeUnit <- findClass(names.mangle("TimeUnit"))
+            timeUnit <- find_and_resolve_class_in_method(names.mangle("TimeUnit"))
             milli <- get_static_class_member(timeUnit,"MILLISECONDS")
             val200 <- paradigm.methodBodyCapabilities.reify(
               TypeRep.Int,
@@ -1704,8 +1698,8 @@ trait ROSApplicationProvider extends BaseProvider {
             ifStmt <- ifThenElse(
               startedVar,
               for {
-                nodeMainExecutorCls <- findClass(names.mangle("NodeMainExecutor"))
-                newDefaultMainExecutorCls <- findClass(names.mangle("DefaultNodeMainExecutor"))
+                nodeMainExecutorCls <- find_and_resolve_class_in_method(names.mangle("NodeMainExecutor"))
+                newDefaultMainExecutorCls <- find_and_resolve_class_in_method(names.mangle("DefaultNodeMainExecutor"))
 
                 newDefaultMainExecutorFunc <- make_static_method_call(
                   newDefaultMainExecutorCls,
@@ -1736,12 +1730,12 @@ trait ROSApplicationProvider extends BaseProvider {
                       _ <- if (node.role.isInstanceOf[roles.Server]) {
                         for {
 
-                          interruptedException <- findClass(names.mangle("InterruptedException"))
+                          interruptedException <- find_and_resolve_class_in_method(names.mangle("InterruptedException"))
 
                            _ <- addExceptionHandler(
                              for {
 
-                               threadCls <- findClass(names.mangle("Thread"))
+                               threadCls <- find_and_resolve_class_in_method(names.mangle("Thread"))
                                val2000 <- paradigm.methodBodyCapabilities.reify(TypeRep.Int, 2000)
                                _ <- make_static_method_call(
                                  threadCls,
@@ -1775,7 +1769,7 @@ trait ROSApplicationProvider extends BaseProvider {
                         TypeRep.String,
                         roleSpecificName
                       )
-                      mainCls <- findClass(names.mangle("Main"))
+                      mainCls <- find_and_resolve_class_in_method(names.mangle("Main"))
                       nodeConfigurationFunc <- make_static_method_call(
                         mainCls,
                         "getNodeConfiguration",
@@ -1783,7 +1777,7 @@ trait ROSApplicationProvider extends BaseProvider {
                         false
                       )
 
-                      nodeConfigurationCls <- findClass(names.mangle("NodeConfiguration"))
+                      nodeConfigurationCls <- find_and_resolve_class_in_method(names.mangle("NodeConfiguration"))
 
                       nodeConfigurationVar <- declareVar(
                         names.mangle(node.name + "Config"),
@@ -1803,8 +1797,8 @@ trait ROSApplicationProvider extends BaseProvider {
                 }
 
 
-                systemCls <- findClass(names.mangle("System"))
-                scannerCls <- findClass(names.mangle("Scanner"))
+                systemCls <- find_and_resolve_class_in_method(names.mangle("System"))
+                scannerCls <- find_and_resolve_class_in_method(names.mangle("Scanner"))
 
                 msg <- paradigm.methodBodyCapabilities.reify(
                   TypeRep.String,
@@ -1867,7 +1861,7 @@ trait ROSApplicationProvider extends BaseProvider {
               for {
 
                 excepName <- nameToExpression(excepName)
-                exceptionUtlsCls <- findClass(names.mangle("ExceptionUtils"))
+                exceptionUtlsCls <- find_and_resolve_class_in_method(names.mangle("ExceptionUtils"))
 
                 getStackTraceFunc <- make_static_method_call(
                   exceptionUtlsCls,
@@ -2015,7 +2009,7 @@ trait ROSApplicationProvider extends BaseProvider {
     import ooParadigm.classCapabilities._
     for {
 
-      stringType <- findClass(names.mangle("String"))
+      stringType <- toTargetLanguageType(TypeRep.String)
 
       defStr <- ooParadigm.classCapabilities.reify(
         TypeRep.String,
@@ -2031,7 +2025,7 @@ trait ROSApplicationProvider extends BaseProvider {
     import ooParadigm.classCapabilities._
     for {
 
-      stringType <- findClass(names.mangle("String"))
+      stringType <- toTargetLanguageType(TypeRep.String)
 
       defStr <- ooParadigm.classCapabilities.reify(
         TypeRep.String,
@@ -2065,7 +2059,7 @@ trait ROSApplicationProvider extends BaseProvider {
 
     for {
 
-      stringType <- findClass(names.mangle("String"))
+      stringType <- toTargetLanguageType(TypeRep.String)
 
       defStr <- ooParadigm.classCapabilities.reify(
         TypeRep.String,
@@ -2107,7 +2101,7 @@ trait ROSApplicationProvider extends BaseProvider {
 
       for {
 
-        stringType <- findClass(names.mangle("String"))
+        stringType <- toTargetLanguageType(TypeRep.String)
 
         defStr <- ooParadigm.classCapabilities.reify(
           TypeRep.String,
@@ -2127,7 +2121,7 @@ trait ROSApplicationProvider extends BaseProvider {
       import classCapabilities._
       import generics.classCapabilities._
       for {
-        rosMsgCls <- findClass(names.mangle("Message"))
+        rosMsgCls <- find_and_resolve_class_in_class(names.mangle("Message"))
 
         _ <- addParent(rosMsgCls)
         _ <- setInterface()
@@ -2151,7 +2145,7 @@ trait ROSApplicationProvider extends BaseProvider {
       import generics.classCapabilities._
 
       for {
-        rosMsgCls <- findClass(names.mangle("Message"))
+        rosMsgCls <- find_and_resolve_class_in_class(names.mangle("Message"))
 
         _ <- addParent(rosMsgCls)
         _ <- setInterface()
@@ -2197,7 +2191,7 @@ trait ROSApplicationProvider extends BaseProvider {
       import generics.classCapabilities._
       for {
 
-        rosMsgCls <- findClass(names.mangle("Message"))
+        rosMsgCls <- find_and_resolve_class_in_class(names.mangle("Message"))
 
         _ <- addParent(rosMsgCls)
         _ <- setInterface()
@@ -2282,7 +2276,7 @@ trait ROSApplicationProvider extends BaseProvider {
     import classCapabilities._
     for {
 
-      appClass <- findClass(names.mangle("AbstractNodeMain"))
+      appClass <- find_and_resolve_class_in_class(names.mangle("AbstractNodeMain"))
       _ <- addParent(appClass)
 
       _ <- addConstructor(make_ros_node_constructor(node))
@@ -2319,6 +2313,7 @@ trait ROSApplicationProvider extends BaseProvider {
     import paradigm.compilationUnitCapabilities._
     import paradigm.projectCapabilities._
 
+
     def get_role_fragment_name(node: Node): Option[String] = {
       val roleType = node.role.getClass.getSimpleName()
 
@@ -2339,6 +2334,7 @@ trait ROSApplicationProvider extends BaseProvider {
 
     for {
       _ <- forEach(domain.nodes) { (node: Node) =>
+
         for {
 
           _ <- if(node.loopFragment.isDefined) {
@@ -2373,7 +2369,7 @@ trait ROSApplicationProvider extends BaseProvider {
             for {
               _ <- registerImportForName(
                 getBaseName(node.loopFragment.get),
-                Seq("logic/")
+                Seq("basic_ros_application", "logic")
               )
             } yield (None)
           } else {
@@ -2387,7 +2383,7 @@ trait ROSApplicationProvider extends BaseProvider {
             for {
               _ <- registerImportForName(
                 getBaseName(get_role_fragment_name(node).get),
-                Seq("logic/")
+                Seq("basic_ros_application", "logic")
               )
             } yield (None)
           } else {
@@ -2409,9 +2405,31 @@ trait ROSApplicationProvider extends BaseProvider {
 
     val importsList = Seq[Seq[String]](
       Seq("org","ros","exception","RosRuntimeException"),
-      Seq("java","lang","String"),
-      Seq("rosjava_test_msgs", "AddTwoIntsRequest"),
-      Seq("rosjava_test_msgs", "AddTwoIntsResponse")
+      Seq("org","apache","commons", "lang3", "exception", "ExceptionUtils"),
+      Seq("org","ros", "RosCore"),
+      Seq("org","ros", "node", "DefaultNodeMainExecutor"),
+      Seq("org","ros", "node", "NodeConfiguration"),
+      Seq("org","ros", "node", "NodeMainExecutor"),
+      Seq("java", "net", "URI"),
+      Seq("java", "util", "Scanner"),
+      Seq("java", "util", "concurrent", "TimeUnit"),
+      Seq("basic_ros_application", "logic", "ClientOnResponse"),
+      Seq("basic_ros_application", "logic", "ClientOnLoop"),
+      Seq("basic_ros_application", "logic", "PublisherOnLoop"),
+      Seq("basic_ros_application", "logic", "ServerOnRequest"),
+      Seq("basic_ros_application", "logic", "SubscriberOnMessage"),
+      Seq("basic_ros_application", "msgs", "SumResponse"),
+      Seq("basic_ros_application", "msgs", "Sum"),
+      Seq("basic_ros_application", "msgs", "SumRequest"),
+      Seq("basic_ros_application", "msgs", "StringMessage"),
+      Seq("org", "ros", "exception", "RemoteException"),
+      Seq("org", "ros", "node", "ConnectedNode"),
+      Seq("org", "ros", "node", "service", "ServiceResponseListener"),
+      Seq("org", "apache", "common", "logging", "Log"),
+      Seq("org", "ros", "concurrent", "CancellableLoop"),
+      Seq("org", "ros", "node", "service", "ServiceClient"),
+      Seq("org", "ros", "internal", "message", "Message"),
+
     )
 
     for {
@@ -2420,7 +2438,7 @@ trait ROSApplicationProvider extends BaseProvider {
         for {
           _ <- registerImportForName(
             elem.last,
-            elem
+            elem.dropRight(1)
           )
         } yield ()
       }

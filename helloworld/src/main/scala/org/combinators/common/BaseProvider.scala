@@ -23,25 +23,44 @@ trait BaseProvider {
   val array: Arrays.WithBase[paradigm.MethodBodyContext, paradigm.type]
   val asserts: Assertions.WithBase[paradigm.MethodBodyContext, paradigm.type]
   val eqls: Equality.WithBase[paradigm.MethodBodyContext, paradigm.type]
-
   val impConstructorParadigm: Imperative.WithBase[ooParadigm.ConstructorContext, paradigm.type]
 
   import paradigm._
   import syntax._
 
-  /**
-    * Default registration for findClass, which works with each registerTypeMapping for the different approaches.
-    *
-    * Sometimes the mapping is fixed for an EP approach, but sometimes it matters when a particular class is requested
-    * in the evolution of the system over time.
-    *
-    * @param dtpe
-    * @param canFindClass
-    * @tparam Ctxt
-    * @return
-    */
 
-    def get_static_class_member(className: String, memberName: String): Generator[MethodBodyContext, Expression] = {
+  def find_and_resolve_class_in_method(qualifiedName: Name): Generator[MethodBodyContext, Type] = {
+    import paradigm.methodBodyCapabilities._
+    import ooParadigm.methodBodyCapabilities._
+
+    for {
+      cls <- findClass(qualifiedName)
+      _ <- resolveAndAddImport(cls)
+    } yield(cls)
+  }
+
+    def find_and_resolve_class_in_class(qualifiedName: Name): Generator[ooParadigm.ClassContext, Type] = {
+      import ooParadigm.classCapabilities._
+      for {
+
+        cls <- findClass(qualifiedName)
+        _ <- resolveAndAddImport(cls)
+
+      } yield (cls)
+    }
+
+  def find_and_resolve_class_in_constructor(qualifiedName: Name): Generator[ooParadigm.ConstructorContext, Type] = {
+    import ooParadigm.constructorCapabilities._
+    for {
+
+      cls <- findClass(qualifiedName)
+      _ <- resolveAndAddImport(cls)
+
+    } yield (cls)
+  }
+
+
+  def get_static_class_member(className: String, memberName: String): Generator[MethodBodyContext, Expression] = {
 
       import ooParadigm.methodBodyCapabilities._
       import paradigm.methodBodyCapabilities._

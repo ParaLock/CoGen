@@ -84,7 +84,7 @@ trait QTApplicationProvider extends BaseProvider {
         for {
           _ <- registerImportForName(
             elem.last,
-            elem
+            elem.dropRight(1)
           )
         } yield ()
       }
