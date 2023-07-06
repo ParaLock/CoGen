@@ -161,7 +161,7 @@ trait ROSApplicationProvider extends BaseProvider {
 
 
           msgType <- find_and_resolve_class_in_method(
-            names.mangle(get_payload_msg_name(role.responseMsgType, role.requestMsgType))
+            names.mangle(get_payload_msg_name(role.requestMsgType, role.responseMsgType))
           )
 
           msgTypeType <- get_static_class_member(
@@ -243,7 +243,6 @@ trait ROSApplicationProvider extends BaseProvider {
               )
 
               rosRuntimeExceptionCls <- find_and_resolve_class_in_method(names.mangle("RosRuntimeException"))
-              _ <- resolveAndAddImport(rosRuntimeExceptionCls)
 
               excep <- exceptions.exceptionCapabilities.raise(
                 excepName,
@@ -303,7 +302,7 @@ trait ROSApplicationProvider extends BaseProvider {
       responseCls <- find_and_resolve_class_in_method(names.mangle(getClassName(role.responseMsgType)))
 
       msgType <- find_and_resolve_class_in_method(
-        names.mangle(get_payload_msg_name(role.responseMsgType, role.requestMsgType))
+        names.mangle(get_payload_msg_name(role.requestMsgType, role.requestMsgType))
       )
 
       msgTypeType <- get_static_class_member(
@@ -1988,14 +1987,14 @@ trait ROSApplicationProvider extends BaseProvider {
           _ <- addAbstractMethod(
             names.mangle("get" + field.getName.capitalize),
             make_message_getter(convertedType),
-            false
+            true
           )
 
           convertedType <- toTargetLanguageType(scala_type_to_typerep(field.getType.getSimpleName))
           _ <- addAbstractMethod(
             names.mangle("set" + field.getName.capitalize),
             make_message_setter(convertedType),
-            false
+            true
           )
 
         } yield ()
@@ -2016,7 +2015,7 @@ trait ROSApplicationProvider extends BaseProvider {
         "basic_ros_application/msgs/" + getClassName(msgCls)
       )
 
-      _ <- addField(names.mangle("_TYPE"), stringType, Some(defStr))
+      _ <- addField(names.mangle("_TYPE"), stringType, Some(defStr), false, true)
 
     } yield (None)
   }
@@ -2029,10 +2028,10 @@ trait ROSApplicationProvider extends BaseProvider {
 
       defStr <- ooParadigm.classCapabilities.reify(
         TypeRep.String,
-        "basic_ros_application/msgs/" + get_payload_msg_name(responseCls, requestCls)
+        "basic_ros_application/msgs/" + get_payload_msg_name(requestCls, responseCls)
       )
 
-      _ <- addField(names.mangle("_TYPE"), stringType, Some(defStr))
+      _ <- addField(names.mangle("_TYPE"), stringType, Some(defStr), false, true)
 
     } yield (None)
   }
@@ -2066,7 +2065,7 @@ trait ROSApplicationProvider extends BaseProvider {
         make_definition_str()
       )
 
-      _ <- addField(names.mangle("_DEFINITION"), stringType, Some(defStr))
+      _ <- addField(names.mangle("_DEFINITION"), stringType, Some(defStr), false, true)
 
     } yield (None)
 
@@ -2086,7 +2085,7 @@ trait ROSApplicationProvider extends BaseProvider {
           s = s + rosTpe + " " + field.getName + '\n'
         }
 
-        s += "--\n"
+        s += "---\n"
 
         for (field <- responseCls.getDeclaredFields) {
 
@@ -2108,7 +2107,7 @@ trait ROSApplicationProvider extends BaseProvider {
           make_definition_str()
         )
 
-        _ <- addField(names.mangle("_DEFINITION"), stringType, Some(defStr))
+        _ <- addField(names.mangle("_DEFINITION"), stringType, Some(defStr), false, true)
 
       } yield (None)
 
@@ -2404,15 +2403,30 @@ trait ROSApplicationProvider extends BaseProvider {
     import paradigm.projectCapabilities._
 
     val importsList = Seq[Seq[String]](
+      Seq("org","ros","exception","ServiceNotFoundException"),
+      Seq("org","ros","namespace","GraphName"),
+      Seq("org","ros","node","AbstractNodeMain"),
       Seq("org","ros","exception","RosRuntimeException"),
-      Seq("org","apache","commons", "lang3", "exception", "ExceptionUtils"),
       Seq("org","ros", "RosCore"),
       Seq("org","ros", "node", "DefaultNodeMainExecutor"),
       Seq("org","ros", "node", "NodeConfiguration"),
       Seq("org","ros", "node", "NodeMainExecutor"),
+      Seq("org", "ros", "concurrent", "CancellableLoop"),
+      Seq("org", "ros", "node", "service", "ServiceClient"),
+      Seq("org", "ros", "internal", "message", "Message"),
+      Seq("org", "ros", "exception", "RemoteException"),
+      Seq("org", "ros", "node", "ConnectedNode"),
+      Seq("org", "ros", "node", "service", "ServiceResponseListener"),
+      Seq("org", "ros", "node", "service", "ServiceServer"),
+      Seq("org", "ros", "node", "topic", "Publisher"),
+      Seq("org", "ros", "node", "topic", "Subscriber"),
       Seq("java", "net", "URI"),
       Seq("java", "util", "Scanner"),
       Seq("java", "util", "concurrent", "TimeUnit"),
+      Seq("org", "apache", "common", "logging", "Log"),
+      Seq("org", "apache", "commons", "lang3", "StringUtils"),
+      Seq("org", "apache", "commons", "lang3", "exception", "ExceptionUtils"),
+      Seq("com", "google", "common", "base", "Preconditions"),
       Seq("basic_ros_application", "logic", "ClientOnResponse"),
       Seq("basic_ros_application", "logic", "ClientOnLoop"),
       Seq("basic_ros_application", "logic", "PublisherOnLoop"),
@@ -2422,14 +2436,6 @@ trait ROSApplicationProvider extends BaseProvider {
       Seq("basic_ros_application", "msgs", "Sum"),
       Seq("basic_ros_application", "msgs", "SumRequest"),
       Seq("basic_ros_application", "msgs", "StringMessage"),
-      Seq("org", "ros", "exception", "RemoteException"),
-      Seq("org", "ros", "node", "ConnectedNode"),
-      Seq("org", "ros", "node", "service", "ServiceResponseListener"),
-      Seq("org", "apache", "common", "logging", "Log"),
-      Seq("org", "ros", "concurrent", "CancellableLoop"),
-      Seq("org", "ros", "node", "service", "ServiceClient"),
-      Seq("org", "ros", "internal", "message", "Message"),
-
     )
 
     for {

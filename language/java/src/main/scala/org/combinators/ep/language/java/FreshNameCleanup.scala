@@ -28,6 +28,7 @@ class FreshNameCleanup(nameInfo: Map[String, MangledName]) {
       }
 
     private final def pushName(name: MangledName, useCounter: Int): MangledName = {
+
       if (useCounter == 0) {
         name
       } else if (useCounter == 1) {

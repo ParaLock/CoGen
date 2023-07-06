@@ -5,6 +5,8 @@ import com.github.javaparser.ast.`type`.{ClassOrInterfaceType, Type}
 import com.github.javaparser.ast.expr.{Name, SimpleName}
 import com.github.javaparser.ast.visitor.Visitable
 
+import java.util.Optional
+
 class ImportCleanup {
   case class UsageAnalyzer(usageData: Map[SimpleName, Map[Option[Name], Int]] = Map.empty.withDefaultValue(Map.empty.withDefaultValue(0))) {
     def use(name: Name): UsageAnalyzer = {
@@ -87,16 +89,27 @@ class ImportCleanup {
       phase match {
         case ANALYZE =>
           usageAnalyzer = usageAnalyzer.use(classOrInterfaceType)
-          classOrInterfaceType.getTypeArguments.map[java.util.stream.Stream[Visitable]](_.stream().map[Visitable](_.accept(this, ANALYZE)))
+
+
+
+          // @BUG: This seems to visit only one type arg
+          classOrInterfaceType.getTypeArguments.map[java.util.stream.Stream[Visitable]](
+            _.stream().map[Visitable](
+              _.accept(this, ANALYZE)
+            )
+          )
+
           classOrInterfaceType
         case CLEANUP =>
           val result = usageAnalyzer.simplify(classOrInterfaceType)
           if (result.getTypeArguments.isPresent) {
+
             val tyArgs = result.getTypeArguments.get
             val newArgs = new NodeList[Type]()
-            tyArgs.stream.forEach(arg =>
+
+            tyArgs.stream.forEach(arg =>{
               newArgs.add(arg.accept(this, CLEANUP).asInstanceOf[Type])
-            )
+            })
             result.setTypeArguments(newArgs)
           }
           result

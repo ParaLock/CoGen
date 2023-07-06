@@ -29,7 +29,8 @@ case class AddField[Name, Type, Expression](
                                              isMutable: Boolean = true,
                                              isVisibleToSubclasses: Boolean = true,
                                              initializer: Option[Expression] = Option.empty,
-                                             isStatic: Boolean = false
+                                             isStatic: Boolean = false,
+                                             noModifiers: Boolean = false
                                            ) extends Command {
   type Result = Unit
 }
@@ -159,8 +160,8 @@ trait ObjectOriented {
       AnyParadigm.capability(RemoveMethod(interface, name))
 
     implicit val canAddFieldInClass: Understands[ClassContext, AddField[Name, Type, Expression]]
-    def addField(name: Name, tpe: Type, init:Option[Expression] = Option.empty, isStatic: Boolean = false): Generator[ClassContext, Unit] =
-      AnyParadigm.capability(AddField[Name, Type, Expression](name, tpe, initializer = init, isStatic = isStatic))
+    def addField(name: Name, tpe: Type, init:Option[Expression] = Option.empty, isStatic: Boolean = false, noModifiers: Boolean = false): Generator[ClassContext, Unit] =
+      AnyParadigm.capability(AddField[Name, Type, Expression](name, tpe, initializer = init, isStatic = isStatic, noModifiers = noModifiers))
 
     // can get a field (by name) and it becomes an expression by itself
     implicit val canGetFieldInClass: Understands[ClassContext, GetField[Name,Expression]]

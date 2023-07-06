@@ -177,25 +177,29 @@ trait ObjectOriented[AP <: AnyParadigm] extends OO {
             val resultCls = context.cls.clone()
             var modifiers: Seq[Modifier.Keyword] = Seq.empty
 
-            if(command.isVisibleToSubclasses) {
-              modifiers = modifiers :+ Modifier.protectedModifier().getKeyword
-            } else {
-              modifiers = modifiers :+ Modifier.privateModifier().getKeyword
-            }
 
-            if (!command.isMutable) {
-              modifiers = modifiers :+ Modifier.finalModifier().getKeyword
-            }
+            if(!command.noModifiers) {
+              if (command.isVisibleToSubclasses) {
+                modifiers = modifiers :+ Modifier.protectedModifier().getKeyword
+              } else {
+                modifiers = modifiers :+ Modifier.privateModifier().getKeyword
+              }
 
-            if(command.isStatic) {
-              modifiers = modifiers :+ Modifier.staticModifier().getKeyword
-            }
+              if (!command.isMutable) {
+                modifiers = modifiers :+ Modifier.finalModifier().getKeyword
+              }
 
-            if (command.initializer.isDefined) {
-              resultCls.addFieldWithInitializer(command.tpe, command.name.toAST.toString, command.initializer.get, modifiers: _*)
-            } else {
-              resultCls.addField(command.tpe, command.name.toAST.toString, modifiers: _*)
+              if (command.isStatic) {
+                modifiers = modifiers :+ Modifier.staticModifier().getKeyword
+              }
             }
+              if (command.initializer.isDefined) {
+                resultCls.addFieldWithInitializer(command.tpe, command.name.toAST.toString, command.initializer.get, modifiers: _*)
+              } else {
+                resultCls.addField(command.tpe, command.name.toAST.toString, modifiers: _*)
+              }
+
+
 
             (context.copy(cls = resultCls), ())
           }

@@ -166,8 +166,8 @@ trait BaseProvider {
     for {
       _ <- resolveAndAddImport(classType)
       classObj <- instantiateObject(classType, constructorParams)
-      classObjName <- freshName(names.mangle(varName))
-      sceneObjVar <- declareVar(classObjName, classType, Some(classObj))
+      //classObjName <- freshName(names.mangle(varName))
+      sceneObjVar <- declareVar(names.mangle(varName), classType, Some(classObj))
     } yield sceneObjVar
   }
 
