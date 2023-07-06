@@ -2415,6 +2415,7 @@ trait ROSApplicationProvider extends BaseProvider {
       Seq("org", "ros", "node", "service", "ServiceClient"),
       Seq("org", "ros", "internal", "message", "Message"),
       Seq("org", "ros", "exception", "RemoteException"),
+      Seq("org", "ros", "message", "MessageListener"),
       Seq("org", "ros", "node", "ConnectedNode"),
       Seq("org", "ros", "node", "service", "ServiceResponseListener"),
       Seq("org", "ros", "node", "service", "ServiceServer"),
