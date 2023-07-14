@@ -1,7 +1,8 @@
 package org.combinators.graphics
 
 import org.combinators.gui.domain_model.{GridLayout, Text, Window}
-import org.combinators.rendering.domain_model.{LargeBuffer, Matrix4f, Mesh, Shader, SmallBuffer}
+import org.combinators.rendering.domain_model.{AdhocBuffer, Shader}
+import org.combinators.rendering.domain_model.resource_types.{Matrix, Mesh}
 
 class GUIDomain {
 

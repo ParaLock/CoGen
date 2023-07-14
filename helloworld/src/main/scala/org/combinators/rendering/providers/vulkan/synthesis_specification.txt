@@ -1,0 +1,22 @@
+# Architecture 1
+
+Catalog <Class>:
+
+
+Renderer <Class>:
+1. catalog: <Field>
+1. create_render_resources(catalog):        <MethodBody>
+2  load_dynamic_render_resources(catalog):  <MethodBody>
+3. destroy_render_resources(catalog):       <MethodBody>
+4. bind_render_resources(catalog):          <MethodBody>
+5. create_command_list():                   <MethodBody>
+
+CommandList <Class>:
+1. enqueue_command(catalog, command):
+
+
+Main <Class>:
+
+
+@COGEN<>
+
