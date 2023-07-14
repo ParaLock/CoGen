@@ -2,15 +2,16 @@ package org.combinators.graphics
 
 import org.combinators.gui.domain_model.{GridLayout, Text, Window}
 import org.combinators.rendering.domain_model.resource_types.{Matrix, Mesh, Vector3f}
-import org.combinators.rendering.domain_model.{AdhocBuffer, GraphicsPipeline, Image, ImageUsage, Shader, BulkBuffer}
-import org.combinators.rendering.domain_model.policies.{RasterizationPolicy, StreamingPolicy}
+import org.combinators.rendering.domain_model.{AdhocBuffer, BulkBuffer, GraphicsPipeline, Image, ImageUsage, Shader}
+import org.combinators.rendering.domain_model.policies.{CreationPolicy, RasterizationPolicy, StreamingPolicy, SynchronizationPolicy}
 import org.combinators.robotics.domain_model.ros.Node
 
+import java.util
 import scala.collection.mutable.ArrayBuffer
 
 class RenderingDomain {
 
-
+  var synchronizationPolicy = new SynchronizationPolicy(false)
 
   def build_example(): Unit = {
 
@@ -22,47 +23,47 @@ class RenderingDomain {
     var magicMatrixType = new Matrix(2, 2)
 
     var vertexBuffer = new BulkBuffer(
-      Tuple3[Float, Float, Float].getClass
+      Seq[Tuple3[Float, Float, Float]].getClass,
+      new CreationPolicy(true)
     )
-    var indexBuffer = new AdhocBuffer(
-      Seq(Int.getClass)
+    var indexBuffer = new BulkBuffer(
+      Seq[Int].getClass,
+      new CreationPolicy(true)
     )
-    var transformMatrixBuffer = new AdhocBuffer(
+    var transformBuffer = new AdhocBuffer(
       Seq(
         worldMatrixType.getClass,
         viewMatrixType.getClass,
         projectionMatrixType.getClass,
         magicMatrixType.getClass
-      )
+      ),
+      new CreationPolicy(false)
     )
 
     var xyzVecArrayType = Seq[Vector3f]()
-    var meshScaleBuffer = new AdhocBuffer(
-      Seq(
-        Float.getClass
-      )
-    )
 
-    var lightsPosBuffer = new AdhocBuffer(
+    var lightsInfoBuffer = new AdhocBuffer(
       Seq(
         xyzVecArrayType.getClass
-      )
+      ),
+      new CreationPolicy(false)
     )
 
     var basicDiffuseTextureType = new Image(
       None,
       None,
-      ImageUsage.Texture
+      ImageUsage.Texture,
+      new CreationPolicy(true)
     )
 
     var basicMeshVertShader = new Shader(
       "resources/basicMeshShader.vert",
-      Seq(vertexBuffer, indexBuffer, transformMatrixBuffer)
+      Seq(vertexBuffer, indexBuffer, transformBuffer)
     )
 
     var basicMeshPixelShader = new Shader(
       "resources/basicMeshShader.pixel",
-      Seq(basicDiffuseTextureType, meshScaleBuffer)
+      Seq(basicDiffuseTextureType)
     )
 
     var fullscreenVertShader = new Shader(
@@ -72,27 +73,34 @@ class RenderingDomain {
 
     var basicLightingPixelShader = new Shader(
       "resources/basicLightingShader.pixel",
-      Seq(lightsPosBuffer)
+      Seq(lightsInfoBuffer)
     )
 
-
-
-    var geometryBuffer = new Image(Some(1024), Some(800), ImageUsage.Texture)
-    var framebuffer    = new Image(Some(1024), Some(800), ImageUsage.Display)
+    var geometryBuffer = new Image(
+      Some(1024),
+      Some(800),
+      ImageUsage.Texture,
+      new CreationPolicy(false)
+    )
+    var framebuffer    = new Image(
+      Some(1024),
+      Some(800),
+      ImageUsage.Display,
+      new CreationPolicy(false)
+    )
 
     var meshPipeline = new GraphicsPipeline(
-
       basicMeshVertShader,
       basicMeshPixelShader,
       new RasterizationPolicy(1,2, 3),
-      geometryBuffer
+      Seq(geometryBuffer)
     )
 
     var lightingPipeline = new GraphicsPipeline(
       fullscreenVertShader,
       basicLightingPixelShader,
       new RasterizationPolicy(1, 2, 3),
-      framebuffer
+      Seq(framebuffer)
     )
 
     pipelines += meshPipeline

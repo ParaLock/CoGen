@@ -1,3 +1,5 @@
 package org.combinators.rendering.domain_model
 
-class BulkBuffer(data: Class[_]) extends RenderResource {}
+import org.combinators.rendering.domain_model.policies.CreationPolicy
+
+class BulkBuffer(data: Class[_], creationPolicy: CreationPolicy) extends RenderResource {}
